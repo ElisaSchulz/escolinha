@@ -349,6 +349,12 @@ function defaultChurches() {
     { id: "lagoa-nova", name: "Lagoa Nova", days: [0,2,5],
       organistas: ["Albeli","Luciene","Suely","Ana Claudia","Alda","Estefani","Heliara","Delma","Danielle","Emilly","Bruna","Fernanda","Elizete"],
       suplente: false, rjm: true, rjmOrganistas: ["Karen","Mirielly"] },
+    { id: "graminha", name: "Graminha", days: [0,2,4],
+      organistas: ["Lilian","Anita","Edna","Jéssica","Patrícia","Francislene","Beatriz","Meirielly","Viviane","Elaine"],
+      suplente: false, rjm: true, rjmOrganistas: ["Danygia","Luana","Jehennifer","Mariana"] },
+    { id: "nova-limeira", name: "Nova Limeira", days: [3,6],
+      organistas: ["Maria Isabel","Geciane","Sindy","Regiane","Gisleide","Denise"],
+      suplente: false, rjm: true, rjmOrganistas: ["Sara","Sarah"] },
   ];
 }
 
@@ -356,7 +362,18 @@ let state = load();
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const st = JSON.parse(raw);
+      // Igrejas padrão novas entram em estados já salvos, exceto as que a
+      // usuária excluiu de propósito.
+      st.deletedIds = st.deletedIds || [];
+      defaultChurches().forEach(d => {
+        if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) {
+          st.churches.push(d);
+        }
+      });
+      return st;
+    }
   } catch (e) { /* armazenamento indisponível: segue com o padrão */ }
   const now = new Date();
   const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -365,7 +382,8 @@ function load() {
     selected: "boa-vista",
     month: next.getMonth(),
     year: next.getFullYear(),
-    schedules: {}
+    schedules: {},
+    deletedIds: []
   };
 }
 function save() {
@@ -806,6 +824,8 @@ $("btnDelChurch").addEventListener("click", () => {
   if (state.churches.length === 1) { alert("É preciso ter pelo menos uma igreja."); return; }
   if (!confirm("Excluir a igreja “" + c.name + "” e seus rodízios?")) return;
   state.churches = state.churches.filter(x => x.id !== c.id);
+  state.deletedIds = state.deletedIds || [];
+  state.deletedIds.push(c.id);
   Object.keys(state.schedules).forEach(k => { if (k.startsWith(c.id + "|")) delete state.schedules[k]; });
   state.selected = state.churches[0].id;
   save(); renderConfig(); renderSheet();
