@@ -194,6 +194,36 @@
   }
   .empty-note { color: var(--muted); padding: 30px 10px; text-align: center; }
   .adddate { margin-top: 8px; }
+
+  /* ---------- janela do PNG ---------- */
+  #pngModal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #pngModal[hidden] { display: none; }
+  #pngModal .back { position: absolute; inset: 0; background: rgba(30, 22, 60, .55); }
+  #pngModal .card {
+    position: relative;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #pngModal p { font-size: 14px; }
+  #pngModal .imgbox { overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  #pngModal img { display: block; width: 100%; height: auto; }
+  #pngModal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  #pngModal a.btnlike {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 9px 16px;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
@@ -273,6 +303,20 @@
     <div class="sheet" id="sheet">
       <div class="empty-note">Escolha a igreja e o mês ao lado e clique em <b>Gerar rodízio</b>.<br>
       Depois de gerado, clique em qualquer nome para trocar a organista.</div>
+    </div>
+  </div>
+</div>
+
+<div id="pngModal" hidden>
+  <div class="back" id="pngBack"></div>
+  <div class="card">
+    <p><b>Seu PNG está pronto!</b> Clique em <b>Salvar PNG</b>. No celular, você também pode
+    tocar e segurar a imagem para salvar, ou usar <b>Compartilhar</b> para enviar direto no WhatsApp.</p>
+    <div class="imgbox"><img id="pngImg" alt="Rodízio gerado"></div>
+    <div class="actions">
+      <a id="pngSave" class="btnlike">⬇ Salvar PNG</a>
+      <button id="pngShare" hidden>Compartilhar…</button>
+      <button id="pngClose">Fechar</button>
     </div>
   </div>
 </div>
@@ -661,12 +705,34 @@ function downloadPng() {
     }
   }
 
-  const a = document.createElement("a");
-  a.download = "RODIZIO_" + c.name.replace(/\s+/g, "_").toUpperCase() + "_" +
+  const name = "RODIZIO_" + c.name.replace(/\s+/g, "_").toUpperCase() + "_" +
     MONTHS[state.month].toUpperCase() + "_" + state.year + ".png";
-  a.href = cv.toDataURL("image/png");
-  a.click();
+  cv.toBlob(blob => openPngModal(blob, name), "image/png");
 }
+
+let pngUrl = null;
+function openPngModal(blob, name) {
+  if (pngUrl) URL.revokeObjectURL(pngUrl);
+  pngUrl = URL.createObjectURL(blob);
+  $("pngImg").src = pngUrl;
+  const save = $("pngSave");
+  save.href = pngUrl;
+  save.download = name;
+
+  const shareBtn = $("pngShare");
+  let file = null;
+  try { file = new File([blob], name, { type: "image/png" }); } catch (e) { /* navegador antigo */ }
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    shareBtn.hidden = false;
+    shareBtn.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+  } else {
+    shareBtn.hidden = true;
+  }
+  $("pngModal").hidden = false;
+}
+function closePngModal() { $("pngModal").hidden = true; }
+$("pngClose").addEventListener("click", closePngModal);
+$("pngBack").addEventListener("click", closePngModal);
 
 function rowValues(r, suplente) {
   const wd = new Date(state.year, state.month, r.day).getDay();
