@@ -367,6 +367,10 @@ function load() {
       // Igrejas padrão novas entram em estados já salvos, exceto as que a
       // usuária excluiu de propósito.
       st.deletedIds = st.deletedIds || [];
+      // Rodízios salvos quando a RJM tinha meia hora + culto viram coluna única.
+      Object.values(st.schedules || {}).forEach(s => (s.rjmRows || []).forEach(r => {
+        if (r.organista === undefined) r.organista = r.meiaHora || "";
+      }));
       defaultChurches().forEach(d => {
         if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) {
           st.churches.push(d);
@@ -498,7 +502,7 @@ function generate() {
     const rs = Math.max(0, rl.indexOf(startRjm.value));
     const rat = (k) => rl[k % rl.length];
     const sundays = datesInMonth(state.year, state.month, [0]);
-    rjmRows = sundays.map((day, k) => ({ day, meiaHora: rat(rs + k), culto: rat(rs + k + 1) }));
+    rjmRows = sundays.map((day, k) => ({ day, organista: rat(rs + k) }));
     rjmNext = rat(rs + sundays.length);
   }
 
@@ -585,16 +589,14 @@ function renderSheet() {
 
     const t2 = document.createElement("table");
     const h2 = t2.insertRow();
-    ["Data", "Meia Hora", "Culto", ""].forEach(x => {
+    ["Data", "Organista", ""].forEach(x => {
       const th = document.createElement("th"); th.textContent = x; h2.appendChild(th);
     });
     s.rjmRows.forEach((row, idx) => {
       const tr = t2.insertRow();
       tr.appendChild(dateCell(row.day));
-      ["meiaHora", "culto"].forEach(k => {
-        const td = tr.insertCell();
-        td.appendChild(nameSelect(c.rjmOrganistas, row[k], v => { row[k] = v; }));
-      });
+      const td = tr.insertCell();
+      td.appendChild(nameSelect(c.rjmOrganistas, row.organista, v => { row.organista = v; }));
       tr.appendChild(removeCell(() => { s.rjmRows.splice(idx, 1); save(); renderSheet(); }));
     });
     sheetEl.appendChild(t2);
@@ -660,14 +662,14 @@ function downloadPng() {
   const c = church();
   if (!s) { alert("Gere o rodízio primeiro."); return; }
 
-  const SCALE = 2, W = 860, PAD = 36;
+  const SCALE = 2, W = 900, PAD = 36;
   const cols = c.suplente ? ["Data", "Meia Hora", "Culto", "Suplente"] : ["Data", "Meia Hora", "Culto"];
-  const rowH = 34, headRowH = 32, titleH = 86, sectionH = 44;
+  const rowH = 44, headRowH = 38, titleH = 96, sectionH = 52;
 
   let H = PAD + titleH + 14 + headRowH + s.cultoRows.length * rowH;
   if (c.rjm) H += sectionH + headRowH + s.rjmRows.length * rowH;
   const hasNotes = (s.ensaio || s.limpeza);
-  if (hasNotes) H += 26 + (s.ensaio ? 26 : 0) + (s.limpeza ? 26 : 0);
+  if (hasNotes) H += 30 + (s.ensaio ? 32 : 0) + (s.limpeza ? 32 : 0);
   H += PAD;
 
   const cv = document.createElement("canvas");
@@ -685,11 +687,11 @@ function downloadPng() {
   g.fillStyle = "#2b2150"; g.fill();
   g.fillStyle = "#fff7ee";
   g.textAlign = "center";
-  g.font = "700 26px Georgia, serif";
-  g.fillText("RODÍZIO " + c.name.toUpperCase(), W / 2, y + 38);
-  g.font = "14px Arial, sans-serif";
+  g.font = "700 32px Georgia, serif";
+  g.fillText("RODÍZIO " + c.name.toUpperCase(), W / 2, y + 44);
+  g.font = "17px Arial, sans-serif";
   g.globalAlpha = .85;
-  g.fillText(MONTHS[state.month] + " de " + state.year + "  ·  Cultos: " + c.days.map(d => WEEKDAYS_SHORT[d]).join(", "), W / 2, y + 64);
+  g.fillText(MONTHS[state.month] + " de " + state.year + "  ·  Cultos: " + c.days.map(d => WEEKDAYS_SHORT[d]).join(", "), W / 2, y + 72);
   g.globalAlpha = 1;
   y += titleH + 14;
 
@@ -701,25 +703,25 @@ function downloadPng() {
     g.fillStyle = "#efeafd"; g.fill();
     g.fillStyle = "#2b2150";
     g.textAlign = "left";
-    g.font = "700 14px Arial, sans-serif";
-    g.fillText("REUNIÃO DE JOVENS E MENORES — DOMINGOS", PAD + 14, y + (sectionH - 12) / 2 + 5);
+    g.font = "700 17px Arial, sans-serif";
+    g.fillText("REUNIÃO DE JOVENS E MENORES — DOMINGOS", PAD + 14, y + (sectionH - 12) / 2 + 6);
     y += sectionH;
-    y = drawTable(g, ["Data", "Meia Hora", "Culto"], s.rjmRows.map(r => rowValues(r, false)), y, W, PAD, headRowH, rowH);
+    y = drawTable(g, ["Data", "Organista"], s.rjmRows.map(r => [fmtDate(r.day), r.organista || "—"]), y, W, PAD, headRowH, rowH);
   }
 
   if (hasNotes) {
-    y += 22;
+    y += 26;
     g.textAlign = "left";
     g.fillStyle = "#241d3d";
     if (s.ensaio) {
-      g.font = "700 15px Arial, sans-serif"; g.fillText("Ensaio:", PAD, y);
-      g.font = "15px Arial, sans-serif"; g.fillText(s.ensaio, PAD + 70, y);
-      y += 26;
+      g.font = "700 18px Arial, sans-serif"; g.fillText("Ensaio:", PAD, y);
+      g.font = "18px Arial, sans-serif"; g.fillText(s.ensaio, PAD + 85, y);
+      y += 32;
     }
     if (s.limpeza) {
-      g.font = "700 15px Arial, sans-serif"; g.fillText("Limpeza/Escala:", PAD, y);
-      g.font = "15px Arial, sans-serif"; g.fillText(s.limpeza, PAD + 130, y);
-      y += 26;
+      g.font = "700 18px Arial, sans-serif"; g.fillText("Limpeza/Escala:", PAD, y);
+      g.font = "18px Arial, sans-serif"; g.fillText(s.limpeza, PAD + 160, y);
+      y += 32;
     }
   }
 
@@ -752,25 +754,28 @@ function closePngModal() { $("pngModal").hidden = true; }
 $("pngClose").addEventListener("click", closePngModal);
 $("pngBack").addEventListener("click", closePngModal);
 
+function fmtDate(day) {
+  const wd = new Date(state.year, state.month, day).getDay();
+  return String(day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0") + " · " + WEEKDAYS_SHORT[wd];
+}
+
 function rowValues(r, suplente) {
-  const wd = new Date(state.year, state.month, r.day).getDay();
-  const date = String(r.day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0") + " · " + WEEKDAYS_SHORT[wd];
-  const vals = [date, r.meiaHora || "—", r.culto || "—"];
+  const vals = [fmtDate(r.day), r.meiaHora || "—", r.culto || "—"];
   if (suplente) vals.push(r.suplente || "—");
   return vals;
 }
 
 function drawTable(g, cols, rows, y, W, PAD, headRowH, rowH) {
   const innerW = W - 2 * PAD;
-  const dateW = 150;
+  const dateW = 180;
   const nameW = (innerW - dateW) / (cols.length - 1);
   const colX = i => PAD + (i === 0 ? 0 : dateW + (i - 1) * nameW);
 
   // cabeçalho
   g.textAlign = "left";
-  g.font = "700 12px Arial, sans-serif";
+  g.font = "700 15px Arial, sans-serif";
   g.fillStyle = "#6c4fd1";
-  cols.forEach((h, i) => g.fillText(h.toUpperCase(), colX(i) + 8, y + 21));
+  cols.forEach((h, i) => g.fillText(h.toUpperCase(), colX(i) + 8, y + 25));
   g.strokeStyle = "#2b2150"; g.lineWidth = 2;
   g.beginPath(); g.moveTo(PAD, y + headRowH); g.lineTo(W - PAD, y + headRowH); g.stroke();
   y += headRowH;
@@ -779,8 +784,8 @@ function drawTable(g, cols, rows, y, W, PAD, headRowH, rowH) {
     if (r % 2 === 1) { g.fillStyle = "#f6f3fb"; g.fillRect(PAD, y, innerW, rowH); }
     g.fillStyle = "#241d3d";
     vals.forEach((v, i) => {
-      g.font = (i === 0 ? "600 " : "") + "15px Arial, sans-serif";
-      g.fillText(String(v), colX(i) + 8, y + rowH / 2 + 5);
+      g.font = (i === 0 ? "600 " : "") + "19px Arial, sans-serif";
+      g.fillText(String(v), colX(i) + 8, y + rowH / 2 + 7);
     });
     g.strokeStyle = "#e8e3f2"; g.lineWidth = 1;
     g.beginPath(); g.moveTo(PAD, y + rowH); g.lineTo(W - PAD, y + rowH); g.stroke();
