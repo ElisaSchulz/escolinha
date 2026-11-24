@@ -6,317 +6,428 @@
 <title>Rodízio de Organistas</title>
 <style>
   :root {
-    --ink: #2b2150;
-    --paper: #fbf8f3;
+    --ink: #22202a;
+    --paper: #f4f3f0;
     --card: #ffffff;
-    --accent: #6c4fd1;
-    --accent-soft: #efeafd;
-    --line: #e4ddd2;
-    --muted: #7a7387;
-    --danger: #b3383f;
-    --sheet-stripe: #f6f3fb;
+    --muted: #5f5b69;
+    --line: #dcd8e1;
+    --soft: #f0eef3;
+    --danger: #b3261e;
+    --c: #1d5fa6; /* cor da igreja escolhida (trocada pelo script) */
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --ink: #ece8f7;
-      --paper: #1c1730;
-      --card: #262040;
-      --accent: #a58df5;
-      --accent-soft: #352b5c;
-      --line: #3d3560;
-      --muted: #a49cc0;
-      --danger: #ef8b91;
-      --sheet-stripe: #f6f3fb;
+    :root:not([data-theme="light"]) {
+      --ink: #eeecf3;
+      --paper: #16151b;
+      --card: #221f2a;
+      --muted: #aaa5b6;
+      --line: #3a3644;
+      --soft: #2a2733;
+      --danger: #f2a29b;
     }
   }
+  :root[data-theme="dark"] {
+    --ink: #eeecf3;
+    --paper: #16151b;
+    --card: #221f2a;
+    --muted: #aaa5b6;
+    --line: #3a3644;
+    --soft: #2a2733;
+    --danger: #f2a29b;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { font-size: 18px; }
   body {
     background: var(--paper);
     color: var(--ink);
-    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    font-family: -apple-system, "Segoe UI", Roboto, Ubuntu, Arial, sans-serif;
+    line-height: 1.5;
   }
-  header.top {
-    background: #2b2150;
-    color: #fff7ee;
-    padding: 18px 24px;
-  }
-  header.top h1 { font: 700 24px/1.2 Georgia, "Times New Roman", serif; }
-  header.top p { opacity: .75; font-size: 13px; margin-top: 2px; }
-  .wrap {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 20px;
-    padding: 20px 24px 60px;
-    max-width: 1280px;
+  button, select, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--c); outline-offset: 2px; }
+
+  header.top { background: #2b2150; color: #fff7ee; padding: 22px 16px; }
+  header.top .in { max-width: 760px; margin: 0 auto; }
+  header.top h1 { font: 700 1.6rem/1.2 Georgia, "Times New Roman", serif; }
+  header.top p { opacity: .85; margin-top: 6px; }
+
+  main {
+    max-width: 760px;
     margin: 0 auto;
-  }
-  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
-
-  .panel {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 18px;
-  }
-  .panel h2 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-  .field .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
-  select, input[type=text], input[type=number], textarea {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: 7px;
-    background: var(--card);
-    color: var(--ink);
-    font: inherit;
-  }
-  textarea { resize: vertical; min-height: 90px; }
-  select:focus, input:focus, textarea:focus, button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-  .row2 { display: flex; gap: 10px; }
-  .row2 > * { flex: 1; }
-  .days { display: flex; flex-wrap: wrap; gap: 6px; }
-  .days label {
-    display: flex; align-items: center; gap: 5px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 4px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .days label:has(input:checked) {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    font-weight: 600;
-  }
-  .check { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; cursor: pointer; }
-  button {
-    font: inherit;
-    border: 1px solid var(--line);
-    background: var(--card);
-    color: var(--ink);
-    border-radius: 8px;
-    padding: 9px 14px;
-    cursor: pointer;
-  }
-  button:hover { border-color: var(--accent); }
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 700;
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-  }
-  button.primary:hover { filter: brightness(1.08); }
-  button.small { padding: 5px 10px; font-size: 13px; }
-  button.danger { color: var(--danger); }
-  .btn-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
-  .divider { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
-
-  /* ---------- preview sheet ---------- */
-  .sheet-panel { display: flex; flex-direction: column; gap: 14px; }
-  .sheet-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .sheet-actions .spacer { flex: 1; }
-  #nextHint { font-size: 13px; color: var(--muted); }
-  .sheet {
-    background: #ffffff;
-    color: #241d3d;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 22px 24px 26px;
-    max-width: 720px;
-  }
-  .sheet .s-title {
-    background: #2b2150;
-    color: #fff7ee;
-    border-radius: 8px;
-    padding: 12px 16px;
-    text-align: center;
-    margin-bottom: 4px;
-  }
-  .sheet .s-title h3 { font: 700 20px/1.2 Georgia, serif; letter-spacing: .02em; }
-  .sheet .s-title div { font-size: 13px; opacity: .8; margin-top: 2px; }
-  .sheet table { width: 100%; border-collapse: collapse; margin-top: 14px; }
-  .sheet th {
-    text-align: left;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #6c4fd1;
-    border-bottom: 2px solid #2b2150;
-    padding: 6px 8px;
-  }
-  .sheet td { border-bottom: 1px solid #e8e3f2; padding: 4px 8px; }
-  .sheet tr:nth-child(even) td { background: var(--sheet-stripe); }
-  .sheet td.date { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; width: 1%; }
-  .sheet td.date .wd { color: #7a7387; font-weight: 400; font-size: 12px; margin-left: 6px; }
-  .sheet td select {
-    border: 1px dashed transparent;
-    background: transparent;
-    color: inherit;
-    width: 100%;
-    padding: 4px 6px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .sheet td select:hover { border-color: #6c4fd1; background: #efeafd; }
-  .sheet td.rm { width: 1%; }
-  .sheet td.rm button { border: 0; background: none; color: #b3383f; font-size: 15px; padding: 2px 6px; opacity: 0; }
-  .sheet tr:hover td.rm button { opacity: 1; }
-  .sheet .section-head {
-    margin-top: 22px;
-    background: #efeafd;
-    color: #2b2150;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: .04em;
-    padding: 8px 12px;
-    border-radius: 7px;
-    text-transform: uppercase;
-  }
-  .sheet .notes { margin-top: 18px; display: grid; gap: 8px; }
-  .sheet .notes label { display: flex; gap: 8px; align-items: center; font-weight: 700; font-size: 14px; }
-  .sheet .notes input {
-    flex: 1; border: 0; border-bottom: 1px dashed #c9c0e0; border-radius: 0;
-    background: transparent; color: inherit; padding: 4px 2px; font: inherit;
-  }
-  .empty-note { color: var(--muted); padding: 30px 10px; text-align: center; }
-  .adddate { margin-top: 8px; }
-
-  /* ---------- janela do PNG ---------- */
-  #pngModal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  #pngModal[hidden] { display: none; }
-  #pngModal .back { position: absolute; inset: 0; background: rgba(30, 22, 60, .55); }
-  #pngModal .card {
-    position: relative;
-    background: var(--card);
-    border-radius: 12px;
-    padding: 16px;
-    max-width: 640px;
-    width: 100%;
-    max-height: 92vh;
+    padding: 20px 16px 48px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 18px;
   }
-  #pngModal p { font-size: 14px; }
-  #pngModal .imgbox { overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .step h2 { display: flex; align-items: center; gap: 12px; font-size: 1.25rem; line-height: 1.3; text-wrap: balance; }
+  .num {
+    flex: none;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--c);
+    color: #fff;
+    display: grid; place-items: center;
+    font-size: 1.05rem; font-weight: 700;
+  }
+  .hint { color: var(--muted); font-size: .95rem; }
+  footer { text-align: center; color: var(--muted); font-size: .9rem; padding: 0 16px 32px; }
+
+  button {
+    cursor: pointer;
+    min-height: 48px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 2px solid var(--line);
+    background: var(--card);
+    font-weight: 600;
+  }
+  button:hover { border-color: var(--c); }
+  button.primary { background: var(--c); border-color: var(--c); color: #fff; font-weight: 700; }
+  button.primary:hover { filter: brightness(1.12); }
+  button.big { width: 100%; min-height: 60px; font-size: 1.15rem; }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  button.danger-fill { background: #b3261e; border-color: #b3261e; color: #fff; }
+
+  select, input[type=text], textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  textarea { min-height: 220px; resize: vertical; line-height: 1.6; }
+
+  /* ---------- passo 1: igrejas ---------- */
+  .churches { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; }
+  .church-btn {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 64px;
+    text-align: left;
+    font-size: 1.05rem;
+    border-color: var(--cc);
+  }
+  .church-btn .dot { flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--cc); }
+  .church-btn:hover { border-color: var(--cc); }
+  .church-btn[aria-pressed="true"] { background: var(--cc); color: #fff; }
+  .church-btn[aria-pressed="true"] .dot { background: #fff; }
+  .church-btn.add { border-style: dashed; border-color: var(--line); color: var(--muted); justify-content: center; }
+  .church-btn.add:hover { border-color: var(--c); }
+
+  details.settings { border: 2px solid var(--line); border-radius: 12px; }
+  details.settings > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex; align-items: center; gap: 10px;
+    min-height: 56px;
+    padding: 12px 16px;
+    font-weight: 600;
+  }
+  details.settings > summary::-webkit-details-marker { display: none; }
+  details.settings > summary::before { content: "▸"; color: var(--c); font-size: 1.2em; transition: transform .15s; }
+  details.settings[open] > summary::before { transform: rotate(90deg); }
+  .settings-body {
+    border-top: 1px solid var(--line);
+    padding: 18px 16px 20px;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field > .label { font-weight: 700; }
+  .days { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: flex; align-items: center; gap: 8px;
+    min-height: 48px;
+    padding: 8px 16px;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+  }
+  .chip input { width: 20px; height: 20px; accent-color: var(--c); }
+  .chip:has(input:checked) {
+    border-color: var(--c);
+    background: var(--soft);
+    background: color-mix(in srgb, var(--c) 14%, var(--card));
+  }
+  .check { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; font-weight: 600; }
+  .check input { flex: none; width: 24px; height: 24px; accent-color: var(--c); }
+  .swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+  .swatch { position: relative; width: 46px; height: 46px; cursor: pointer; }
+  .swatch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .swatch span { display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--sc); }
+  .swatch input:checked + span { box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--sc); }
+  .swatch input:focus-visible + span { outline: 3px solid var(--ink); outline-offset: 7px; }
+  .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* ---------- passo 2: mês ---------- */
+  .month-nav { display: flex; align-items: center; gap: 12px; }
+  .month-nav button { flex: none; width: 60px; height: 60px; padding: 0; font-size: 1.3rem; }
+  .month-nav .label { flex: 1; text-align: center; font-size: 1.45rem; font-weight: 700; }
+
+  /* ---------- passo 3 ---------- */
+  .start-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .msg {
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-weight: 600;
+  }
+
+  /* ---------- passo 4: folha ---------- */
+  .empty { color: var(--muted); }
+  .sheet {
+    --card: #ffffff;
+    --ink: #241d3d;
+    --line: #dcd8e1;
+    --danger: #b3261e;
+    background: #ffffff;
+    color: #241d3d;
+    border: 1px solid #dcd8e1;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .sheet .banner { background: var(--c); color: #fff; border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .sheet .banner h3 { font: 700 1.35rem/1.2 Georgia, "Times New Roman", serif; text-wrap: balance; }
+  .sheet .banner div { font-size: .95rem; opacity: .9; margin-top: 2px; }
+  .sheet table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .sheet th {
+    text-align: left;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--c);
+    border-bottom: 2px solid var(--c);
+    padding: 6px;
+  }
+  .sheet td { padding: 6px; border-bottom: 1px solid #ece9f0; vertical-align: middle; }
+  .sheet tbody tr:nth-child(even) td { background: #f7f5fa; }
+  .sheet td.date { width: 1%; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sheet td.date small { display: block; color: #5f5b69; font-size: .85rem; }
+  .sheet td select { min-height: 44px; padding: 6px 8px; border-width: 1px; }
+  .sheet td.rm { width: 1%; }
+  .sheet td.rm button {
+    min-height: 40px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #5f5b69;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .sheet td.rm button:hover { color: #b3261e; border-color: #b3261e; }
+  .sheet .section {
+    margin-top: 20px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #f0eef3;
+    background: color-mix(in srgb, var(--c) 14%, #ffffff);
+    color: var(--c);
+    font-weight: 700;
+    font-size: .9rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 560px) {
+    .step { padding: 16px 14px; }
+    .sheet { padding: 10px; }
+    .sheet table, .sheet tbody, .sheet tr, .sheet td { display: block; width: 100%; }
+    .sheet thead { display: none; }
+    .sheet tbody tr { position: relative; padding: 8px 6px; border-bottom: 1px solid #ece9f0; }
+    .sheet tbody tr:nth-child(even) { background: #f7f5fa; }
+    .sheet tbody tr:nth-child(even) td { background: transparent; }
+    .sheet td { border: 0; padding: 3px 0; }
+    .sheet td.date { width: auto; font-size: 1.05rem; padding-right: 100px; }
+    .sheet td.date small { display: inline; margin-left: 6px; font-size: 1rem; }
+    .sheet td.name { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; }
+    .sheet td.name::before { content: attr(data-label); color: #5f5b69; font-size: .9rem; font-weight: 600; }
+    .sheet td.rm { position: absolute; top: 4px; right: 4px; width: auto; padding: 0; }
+  }
+
+  .add-row { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .inline { display: flex; gap: 10px; }
+  .inline select { flex: 1; min-width: 0; }
+  .notes { display: flex; flex-direction: column; gap: 12px; }
+  .notes label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+
+  /* ---------- janelas ---------- */
+  .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal .back { position: absolute; inset: 0; background: rgba(20, 16, 35, .6); }
+  .modal .box {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    max-height: 92vh;
+    overflow: auto;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 22px;
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--ink);
+  }
+  .modal h3 { font-size: 1.25rem; text-wrap: balance; }
+  .modal .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .modal .actions > * { flex: 1 1 160px; }
+  #pngModal .box { max-width: 640px; }
+  #pngModal .imgbox { flex: 1 1 auto; min-height: 0; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
   #pngModal img { display: block; width: 100%; height: auto; }
-  #pngModal .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  #pngModal a.btnlike {
-    display: inline-block;
-    background: var(--accent);
+  a.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 48px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: var(--c);
     color: #fff;
     font-weight: 700;
-    border-radius: 8px;
-    padding: 9px 16px;
     text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
   }
 </style>
 </head>
 <body>
 <header class="top">
-  <h1>Rodízio de Organistas</h1>
-  <p>Escolha a igreja e o mês, gere o rodízio, ajuste o que precisar e baixe o PNG.</p>
+  <div class="in">
+    <h1>Rodízio de Organistas</h1>
+    <p>Monte o rodízio do mês em 4 passos.</p>
+  </div>
 </header>
 
-<div class="wrap">
-  <!-- ============ CONFIG ============ -->
-  <div>
-    <div class="panel">
-      <h2>Igreja</h2>
-      <div class="field">
-        <select id="churchSelect"></select>
-        <div class="btn-row">
-          <button class="small" id="btnAddChurch">+ Nova igreja</button>
-          <button class="small" id="btnRenameChurch">Renomear</button>
-          <button class="small danger" id="btnDelChurch">Excluir</button>
+<main>
+  <section class="step">
+    <h2><span class="num">1</span> Escolha a igreja</h2>
+    <div class="churches" id="churches"></div>
+
+    <details class="settings" id="settings">
+      <summary><span>Mudar organistas, dias de culto ou cor de <b id="settingsName"></b></span></summary>
+      <div class="settings-body">
+        <label class="field">
+          <span class="label">Nome da igreja</span>
+          <input type="text" id="nameInput" autocomplete="off">
+        </label>
+
+        <div class="field">
+          <span class="label">Dias de culto</span>
+          <div class="days" id="daysBox"></div>
+        </div>
+
+        <label class="field">
+          <span class="label">Organistas do culto</span>
+          <span class="hint">Escreva um nome por linha, na ordem do rodízio.</span>
+          <textarea id="organistas"></textarea>
+        </label>
+
+        <label class="check"><input type="checkbox" id="hasSuplente"> Tem organista suplente</label>
+        <label class="check"><input type="checkbox" id="hasRjm"> Tem Reunião de Jovens e Menores aos domingos</label>
+
+        <label class="field" id="rjmField">
+          <span class="label">Organistas da Reunião de Jovens</span>
+          <span class="hint">Um nome por linha, na ordem do rodízio.</span>
+          <textarea id="rjmOrganistas"></textarea>
+        </label>
+
+        <div class="field">
+          <span class="label">Cor da igreja</span>
+          <div class="swatches" id="swatches"></div>
+        </div>
+
+        <div class="settings-actions">
+          <button type="button" id="btnCloseSettings">Pronto</button>
+          <button type="button" class="danger" id="btnDelChurch"></button>
         </div>
       </div>
+    </details>
+  </section>
 
-      <div class="field">
-        <label>Dias de culto</label>
-        <div class="days" id="daysBox"></div>
-      </div>
-
-      <div class="field">
-        <label>Organistas do culto <span class="hint">(uma por linha, na ordem do rodízio)</span></label>
-        <textarea id="organistas"></textarea>
-      </div>
-
-      <div class="field">
-        <label class="check"><input type="checkbox" id="hasSuplente"> Tem coluna “Suplente”</label>
-      </div>
-
-      <div class="field">
-        <label class="check"><input type="checkbox" id="hasRjm"> Tem Reunião de Jovens e Menores (domingos)</label>
-      </div>
-      <div class="field" id="rjmField">
-        <label>Organistas da RJM <span class="hint">(uma por linha)</span></label>
-        <textarea id="rjmOrganistas"></textarea>
-      </div>
+  <section class="step">
+    <h2><span class="num">2</span> Escolha o mês</h2>
+    <div class="month-nav">
+      <button type="button" id="prevMonth" aria-label="Mês anterior">◀</button>
+      <div class="label" id="monthLabel" aria-live="polite"></div>
+      <button type="button" id="nextMonth" aria-label="Próximo mês">▶</button>
     </div>
+  </section>
 
-    <div class="panel" style="margin-top:16px">
-      <h2>Mês do rodízio</h2>
-      <div class="field row2">
-        <div>
-          <label>Mês</label>
-          <select id="monthSelect"></select>
+  <section class="step">
+    <h2><span class="num">3</span> Monte o rodízio</h2>
+    <label class="start-field">
+      Quem faz a meia hora do primeiro culto do mês
+      <select id="startCulto"></select>
+    </label>
+    <label class="start-field" id="startRjmRow">
+      Quem toca na primeira Reunião de Jovens do mês
+      <select id="startRjm"></select>
+    </label>
+    <p class="hint" id="startHint">Já escolhido para continuar de onde parou no mês anterior.</p>
+    <div class="msg" id="msg" role="alert" hidden></div>
+    <button type="button" class="primary big" id="btnGenerate"></button>
+  </section>
+
+  <section class="step" id="step4">
+    <h2><span class="num">4</span> Confira e baixe a imagem</h2>
+    <p class="empty" id="emptyNote">Depois de montar o rodízio, ele aparece aqui.</p>
+    <div id="result" hidden>
+      <div style="display:flex; flex-direction:column; gap:16px">
+        <p class="hint">Para trocar uma organista, toque no nome dela e escolha outra.</p>
+        <div class="sheet" id="sheet"></div>
+        <label class="add-row" for="addDay">
+          Incluir outra data de culto
+          <span class="inline">
+            <select id="addDay"></select>
+            <button type="button" id="btnAddDay">Incluir</button>
+          </span>
+        </label>
+        <div class="notes">
+          <label>Ensaio <input type="text" id="ensaio" placeholder="Ex.: sábado 15/08, às 17h"></label>
+          <label>Limpeza/Escala <input type="text" id="limpeza"></label>
         </div>
-        <div>
-          <label>Ano</label>
-          <input type="number" id="yearInput" min="2020" max="2100">
-        </div>
+        <button type="button" class="primary big" id="btnPng">⬇ Baixar imagem do rodízio</button>
       </div>
-      <div class="field">
-        <label>Quem começa a meia hora do 1º culto</label>
-        <select id="startCulto"></select>
-      </div>
-      <div class="field" id="startRjmField">
-        <label>Quem começa a meia hora da 1ª RJM</label>
-        <select id="startRjm"></select>
-      </div>
-      <button class="primary" id="btnGenerate">Gerar rodízio</button>
     </div>
-  </div>
+  </section>
+</main>
 
-  <!-- ============ PREVIEW ============ -->
-  <div class="sheet-panel">
-    <div class="sheet-actions">
-      <button id="btnPng">⬇ Baixar PNG</button>
-      <span class="spacer"></span>
-      <span id="nextHint"></span>
-    </div>
-    <div class="sheet" id="sheet">
-      <div class="empty-note">Escolha a igreja e o mês ao lado e clique em <b>Gerar rodízio</b>.<br>
-      Depois de gerado, clique em qualquer nome para trocar a organista.</div>
+<footer>Tudo é salvo automaticamente neste aparelho.</footer>
+
+<div class="modal" id="dlg" hidden>
+  <div class="back" id="dlgBack"></div>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgText"></p>
+    <div class="actions">
+      <button type="button" id="dlgCancel"></button>
+      <button type="button" class="primary" id="dlgOk"></button>
     </div>
   </div>
 </div>
 
-<div id="pngModal" hidden>
+<div class="modal" id="pngModal" hidden>
   <div class="back" id="pngBack"></div>
-  <div class="card">
-    <p><b>Seu PNG está pronto!</b> Clique em <b>Salvar PNG</b>. No celular, você também pode
-    tocar e segurar a imagem para salvar, ou usar <b>Compartilhar</b> para enviar direto no WhatsApp.</p>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="pngTitle">
+    <h3 id="pngTitle">Sua imagem está pronta</h3>
+    <p>Toque em <b>Salvar imagem</b>. No celular, você também pode tocar e segurar a imagem
+    para salvar, ou usar <b>Compartilhar</b> para mandar direto no WhatsApp.</p>
     <div class="imgbox"><img id="pngImg" alt="Rodízio gerado"></div>
     <div class="actions">
-      <a id="pngSave" class="btnlike">⬇ Salvar PNG</a>
-      <button id="pngShare" hidden>Compartilhar…</button>
-      <button id="pngClose">Fechar</button>
+      <a id="pngSave" class="btn">⬇ Salvar imagem</a>
+      <button type="button" id="pngShare" hidden>Compartilhar…</button>
+      <button type="button" id="pngClose">Fechar</button>
     </div>
   </div>
 </div>
@@ -324,207 +435,408 @@
 <script>
 "use strict";
 /* ============================================================
-   Estado e persistência
+   Dados
 ============================================================ */
 const STORE_KEY = "rodizio-organistas-v1";
-const WEEKDAYS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
 const WEEKDAYS_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAYS_CHIP = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const PALETTE = [
+  ["#1d5fa6", "Azul"], ["#96283f", "Bordô"], ["#8a6200", "Dourado"], ["#6a3d9a", "Roxo"],
+  ["#0b6e78", "Azul-petróleo"], ["#2b7a46", "Verde"], ["#b04a12", "Laranja"],
+  ["#455a64", "Cinza"], ["#a02a7a", "Magenta"], ["#5d6b12", "Oliva"]
+];
 
 function defaultChurches() {
   return [
-    { id: "boa-vista", name: "Boa Vista", days: [0,4,6],
+    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4,6],
       organistas: ["Elaine","Helena","Elcivani","Luciana","Rita","Rute","Juciele","Andreza","Maria","Gislaine"],
       suplente: false, rjm: true,
       rjmOrganistas: ["Elaine","Helena","Luciana","Rita","Rute","Juciele","Gislaine"] },
-    { id: "frades", name: "Frades", days: [0,3],
+    { id: "frades", name: "Frades", color: "#96283f", days: [0,3],
       organistas: ["Graziela","Maraísa","Lucia"],
       suplente: true, rjm: false, rjmOrganistas: [] },
-    { id: "ouro-verde", name: "Ouro Verde", days: [0,4,6],
+    { id: "ouro-verde", name: "Ouro Verde", color: "#8a6200", days: [0,4,6],
       organistas: ["Aline","Kátia","Libeni","Josiane","Edvânia","Karine","Talita","Vitória","Thayná","Lidyani","Sarah"],
       suplente: false, rjm: true, rjmOrganistas: ["Karine","Vitória"] },
-    { id: "campos-eliseos", name: "Campos Elíseos", days: [0,3],
+    { id: "campos-eliseos", name: "Campos Elíseos", color: "#6a3d9a", days: [0,3],
       organistas: ["Mirian","Mariuza","Maria Rita","Adriana","Viviane"],
       suplente: false, rjm: true, rjmOrganistas: ["Thais","Carine"] },
-    { id: "lagoa-nova", name: "Lagoa Nova", days: [0,2,5],
+    { id: "lagoa-nova", name: "Lagoa Nova", color: "#0b6e78", days: [0,2,5],
       organistas: ["Albeli","Luciene","Suely","Ana Claudia","Alda","Estefani","Heliara","Delma","Danielle","Emilly","Bruna","Fernanda","Elizete"],
       suplente: false, rjm: true, rjmOrganistas: ["Karen","Mirielly"] },
-    { id: "graminha", name: "Graminha", days: [0,2,4],
+    { id: "graminha", name: "Graminha", color: "#2b7a46", days: [0,2,4],
       organistas: ["Lilian","Anita","Edna","Jéssica","Patrícia","Francislene","Beatriz","Meirielly","Viviane","Elaine"],
       suplente: false, rjm: true, rjmOrganistas: ["Danygia","Luana","Jehennifer","Mariana"] },
-    { id: "nova-limeira", name: "Nova Limeira", days: [3,6],
+    { id: "nova-limeira", name: "Nova Limeira", color: "#b04a12", days: [3,6],
       organistas: ["Maria Isabel","Geciane","Sindy","Regiane","Gisleide","Denise"],
       suplente: false, rjm: true, rjmOrganistas: ["Sara","Sarah"] },
   ];
 }
 
 let state = load();
+
 function load() {
+  let st = null;
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) {
-      const st = JSON.parse(raw);
-      // Igrejas padrão novas entram em estados já salvos, exceto as que a
-      // usuária excluiu de propósito.
-      st.deletedIds = st.deletedIds || [];
-      // Rodízios salvos quando a RJM tinha meia hora + culto viram coluna única.
-      Object.values(st.schedules || {}).forEach(s => (s.rjmRows || []).forEach(r => {
-        if (r.organista === undefined) r.organista = r.meiaHora || "";
-      }));
-      defaultChurches().forEach(d => {
-        if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) {
-          st.churches.push(d);
-        }
-      });
-      return st;
-    }
+    if (raw) st = JSON.parse(raw);
   } catch (e) { /* armazenamento indisponível: segue com o padrão */ }
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return {
-    churches: defaultChurches(),
-    selected: "boa-vista",
-    month: next.getMonth(),
-    year: next.getFullYear(),
-    schedules: {},
-    deletedIds: []
-  };
+
+  if (!st || !Array.isArray(st.churches) || !st.churches.length) {
+    const next = new Date();
+    next.setDate(1);
+    next.setMonth(next.getMonth() + 1);
+    st = { churches: defaultChurches(), selected: "boa-vista",
+           month: next.getMonth(), year: next.getFullYear(), schedules: {}, deletedIds: [] };
+  }
+  st.schedules = st.schedules || {};
+  st.deletedIds = st.deletedIds || [];
+
+  // Rodízios salvos quando a RJM tinha meia hora + culto viram coluna única.
+  Object.values(st.schedules).forEach(s => (s.rjmRows || []).forEach(r => {
+    if (r.organista === undefined) r.organista = r.meiaHora || "";
+  }));
+
+  // Igrejas padrão novas entram em estados já salvos, exceto as excluídas de propósito.
+  const defs = defaultChurches();
+  defs.forEach(d => {
+    if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) st.churches.push(d);
+  });
+  st.churches.forEach((c, i) => {
+    if (!c.color) {
+      const d = defs.find(x => x.id === c.id);
+      c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
+    }
+  });
+  return st;
 }
+
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignora */ }
 }
 
 function church() { return state.churches.find(c => c.id === state.selected) || state.churches[0]; }
-function schedKey() { return state.selected + "|" + state.year + "-" + state.month; }
-function sched() { return state.schedules[schedKey()]; }
-
-/* ============================================================
-   Elementos
-============================================================ */
-const $ = id => document.getElementById(id);
-const churchSelect = $("churchSelect"), daysBox = $("daysBox"),
-  organistasTa = $("organistas"), rjmTa = $("rjmOrganistas"),
-  hasRjm = $("hasRjm"), hasSuplente = $("hasSuplente"),
-  monthSelect = $("monthSelect"), yearInput = $("yearInput"),
-  startCulto = $("startCulto"), startRjm = $("startRjm"),
-  sheetEl = $("sheet"), nextHint = $("nextHint");
-
-MONTHS.forEach((m, i) => monthSelect.add(new Option(m, i)));
-
-/* ============================================================
-   Render da configuração
-============================================================ */
-function renderConfig() {
-  const c = church();
-  state.selected = c.id;
-
-  churchSelect.innerHTML = "";
-  state.churches.forEach(ch => churchSelect.add(new Option(ch.name, ch.id)));
-  churchSelect.value = c.id;
-
-  daysBox.innerHTML = "";
-  WEEKDAYS_SHORT.forEach((d, i) => {
-    const lab = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = c.days.includes(i);
-    cb.addEventListener("change", () => {
-      c.days = WEEKDAYS_SHORT.map((_, j) => j)
-        .filter(j => daysBox.querySelectorAll("input")[j].checked);
-      save();
-    });
-    lab.append(cb, document.createTextNode(d));
-    daysBox.appendChild(lab);
-  });
-
-  organistasTa.value = c.organistas.join("\n");
-  rjmTa.value = c.rjmOrganistas.join("\n");
-  hasRjm.checked = c.rjm;
-  hasSuplente.checked = c.suplente;
-  $("rjmField").style.display = c.rjm ? "" : "none";
-  $("startRjmField").style.display = c.rjm ? "" : "none";
-
-  monthSelect.value = state.month;
-  yearInput.value = state.year;
-
-  fillStartSelect(startCulto, c.organistas);
-  fillStartSelect(startRjm, c.rjmOrganistas);
+function keyFor(id, y, m) { return id + "|" + y + "-" + m; }
+function sched() { return state.schedules[keyFor(church().id, state.year, state.month)]; }
+function prevSched() {
+  let m = state.month - 1, y = state.year;
+  if (m < 0) { m = 11; y--; }
+  return state.schedules[keyFor(church().id, y, m)];
 }
+function monthName() { return MONTHS[state.month]; }
+function parseLines(text) { return text.split("\n").map(s => s.trim()).filter(Boolean); }
+function fmtDay(day) { return String(day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0"); }
+function wdOf(day) { return new Date(state.year, state.month, day).getDay(); }
 
-function fillStartSelect(sel, list) {
-  const cur = sel.value;
-  sel.innerHTML = "";
-  list.forEach(n => sel.add(new Option(n, n)));
-  if (list.includes(cur)) sel.value = cur;
-}
-
-function parseLines(text) {
-  return text.split("\n").map(s => s.trim()).filter(Boolean);
-}
-
-/* ============================================================
-   Geração do rodízio
-============================================================ */
-function datesInMonth(year, month, weekdaySet) {
+function datesInMonth(year, month, weekdays) {
   const out = [];
   const d = new Date(year, month, 1);
   while (d.getMonth() === month) {
-    if (weekdaySet.includes(d.getDay())) out.push(d.getDate());
+    if (weekdays.includes(d.getDay())) out.push(d.getDate());
     d.setDate(d.getDate() + 1);
   }
   return out;
 }
 
-function generate() {
+/* ============================================================
+   Utilidades de tela
+============================================================ */
+const $ = id => document.getElementById(id);
+function el(tag, props, children) {
+  const e = document.createElement(tag);
+  if (props) Object.assign(e, props);
+  (children || []).forEach(ch => e.append(ch));
+  return e;
+}
+
+function ask(o) {
+  return new Promise(resolve => {
+    $("dlgTitle").textContent = o.title;
+    $("dlgText").textContent = o.text;
+    $("dlgOk").textContent = o.ok;
+    $("dlgCancel").textContent = o.cancel || "Cancelar";
+    $("dlgOk").className = o.danger ? "danger-fill" : "primary";
+    $("dlg").hidden = false;
+    $("dlgCancel").focus();
+    const onKey = e => { if (e.key === "Escape") done(false); };
+    function done(v) {
+      $("dlg").hidden = true;
+      $("dlgOk").onclick = $("dlgCancel").onclick = $("dlgBack").onclick = null;
+      document.removeEventListener("keydown", onKey);
+      resolve(v);
+    }
+    $("dlgOk").onclick = () => done(true);
+    $("dlgCancel").onclick = $("dlgBack").onclick = () => done(false);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
+function showMsg(text) {
+  const m = $("msg");
+  m.textContent = text;
+  m.hidden = !text;
+}
+
+function scrollToEl(node) {
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+}
+
+/* ============================================================
+   Passo 1: igrejas e configurações
+============================================================ */
+function applyColor() { document.documentElement.style.setProperty("--c", church().color); }
+
+function renderChurches() {
+  const box = $("churches");
+  box.innerHTML = "";
+  state.churches.forEach(c => {
+    const b = el("button", { type: "button", className: "church-btn" },
+      [el("span", { className: "dot" }), el("span", { textContent: c.name })]);
+    b.style.setProperty("--cc", c.color);
+    b.setAttribute("aria-pressed", String(c.id === church().id));
+    b.addEventListener("click", () => {
+      state.selected = c.id;
+      showMsg("");
+      save();
+      renderAll();
+    });
+    box.append(b);
+  });
+  const add = el("button", { type: "button", className: "church-btn add", textContent: "+ Nova igreja" });
+  add.addEventListener("click", addChurch);
+  box.append(add);
+}
+
+function renderSettings() {
   const c = church();
-  c.organistas = parseLines(organistasTa.value);
-  c.rjmOrganistas = parseLines(rjmTa.value);
-  if (!c.organistas.length) { alert("Cadastre pelo menos uma organista do culto."); return; }
-  if (!c.days.length) { alert("Marque pelo menos um dia de culto."); return; }
-  if (c.rjm && !c.rjmOrganistas.length) { alert("Cadastre as organistas da RJM ou desmarque a opção."); return; }
+  $("settingsName").textContent = c.name;
+  $("nameInput").value = c.name;
+
+  const days = $("daysBox");
+  days.innerHTML = "";
+  WEEKDAYS_CHIP.forEach((d, i) => {
+    const cb = el("input", { type: "checkbox", checked: c.days.includes(i) });
+    cb.addEventListener("change", () => {
+      c.days = cb.checked ? [...new Set(c.days.concat(i))] : c.days.filter(x => x !== i);
+      c.days.sort((a, b) => a - b);
+      save();
+    });
+    days.append(el("label", { className: "chip" }, [cb, d]));
+  });
+
+  $("organistas").value = c.organistas.join("\n");
+  $("rjmOrganistas").value = c.rjmOrganistas.join("\n");
+  $("hasSuplente").checked = c.suplente;
+  $("hasRjm").checked = c.rjm;
+  $("rjmField").hidden = !c.rjm;
+
+  const sw = $("swatches");
+  sw.innerHTML = "";
+  PALETTE.forEach(([hex, nome]) => {
+    const inp = el("input", { type: "radio", name: "cor", value: hex,
+      checked: hex.toLowerCase() === c.color.toLowerCase() });
+    inp.setAttribute("aria-label", nome);
+    inp.addEventListener("change", () => {
+      c.color = hex;
+      save();
+      applyColor();
+      renderChurches();
+    });
+    const lab = el("label", { className: "swatch", title: nome }, [inp, el("span")]);
+    lab.style.setProperty("--sc", hex);
+    sw.append(lab);
+  });
+
+  $("btnDelChurch").textContent = "Excluir a igreja " + c.name;
+}
+
+function addChurch() {
+  const used = state.churches.map(c => c.color.toLowerCase());
+  const free = PALETTE.find(([hex]) => !used.includes(hex.toLowerCase()));
+  const id = "igreja-" + Date.now();
+  state.churches.push({ id, name: "Nova igreja", color: free ? free[0] : PALETTE[0][0],
+    days: [0], organistas: [], suplente: false, rjm: true, rjmOrganistas: [] });
+  state.selected = id;
+  save();
+  renderAll();
+  $("settings").open = true;
+  $("nameInput").focus();
+  $("nameInput").select();
+}
+
+$("nameInput").addEventListener("input", () => {
+  const c = church();
+  c.name = $("nameInput").value.trim() || "Sem nome";
+  save();
+  renderChurches();
+  $("settingsName").textContent = c.name;
+  $("btnDelChurch").textContent = "Excluir a igreja " + c.name;
+  renderSheet();
+});
+$("organistas").addEventListener("input", () => {
+  church().organistas = parseLines($("organistas").value);
+  save();
+  renderStart();
+  renderSheet();
+});
+$("rjmOrganistas").addEventListener("input", () => {
+  church().rjmOrganistas = parseLines($("rjmOrganistas").value);
+  save();
+  renderStart();
+  renderSheet();
+});
+$("hasSuplente").addEventListener("change", () => {
+  church().suplente = $("hasSuplente").checked;
+  save();
+  renderSheet();
+});
+$("hasRjm").addEventListener("change", () => {
+  church().rjm = $("hasRjm").checked;
+  $("rjmField").hidden = !church().rjm;
+  save();
+  renderStart();
+  renderSheet();
+});
+$("btnCloseSettings").addEventListener("click", () => { $("settings").open = false; });
+$("btnDelChurch").addEventListener("click", async () => {
+  const c = church();
+  if (state.churches.length === 1) {
+    await ask({ title: "Não dá para excluir", text: "É preciso ter pelo menos uma igreja.", ok: "Entendi", cancel: "Fechar" });
+    return;
+  }
+  const ok = await ask({
+    title: "Excluir a igreja " + c.name + "?",
+    text: "A igreja, as listas de organistas e todos os rodízios dela serão apagados deste aparelho.",
+    ok: "Excluir", cancel: "Não excluir", danger: true
+  });
+  if (!ok) return;
+  state.churches = state.churches.filter(x => x.id !== c.id);
+  state.deletedIds.push(c.id);
+  Object.keys(state.schedules).forEach(k => { if (k.startsWith(c.id + "|")) delete state.schedules[k]; });
+  state.selected = state.churches[0].id;
+  save();
+  $("settings").open = false;
+  renderAll();
+});
+
+/* ============================================================
+   Passo 2: mês
+============================================================ */
+function renderMonth() {
+  $("monthLabel").textContent = monthName() + " de " + state.year;
+  $("btnGenerate").textContent = (sched() ? "Montar de novo o rodízio de " : "Montar rodízio de ") + monthName();
+}
+
+function moveMonth(delta) {
+  let m = state.month + delta, y = state.year;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  state.month = m;
+  state.year = y;
+  showMsg("");
+  save();
+  renderMonth();
+  renderStart();
+  renderSheet();
+}
+$("prevMonth").addEventListener("click", () => moveMonth(-1));
+$("nextMonth").addEventListener("click", () => moveMonth(1));
+
+/* ============================================================
+   Passo 3: montar
+============================================================ */
+function fillSelect(sel, list, value) {
+  sel.innerHTML = "";
+  list.forEach(n => sel.add(new Option(n, n)));
+  if (list.length) sel.value = list.includes(value) ? value : list[0];
+}
+
+function nextAfter(list, rows, field) {
+  if (!rows || !rows.length) return null;
+  const i = list.indexOf(rows[rows.length - 1][field]);
+  return i >= 0 ? list[(i + 1) % list.length] : null;
+}
+
+function renderStart() {
+  const c = church(), s = sched();
+  let culto = null, rjm = null, fromPrev = false;
+  if (s) {
+    culto = s.cultoRows[0] && s.cultoRows[0].meiaHora;
+    rjm = s.rjmRows && s.rjmRows[0] && s.rjmRows[0].organista;
+  } else {
+    const p = prevSched();
+    if (p) {
+      culto = nextAfter(c.organistas, p.cultoRows, "meiaHora");
+      rjm = nextAfter(c.rjmOrganistas, p.rjmRows, "organista");
+      fromPrev = !!(culto || (c.rjm && rjm));
+    }
+  }
+  fillSelect($("startCulto"), c.organistas, culto);
+  fillSelect($("startRjm"), c.rjmOrganistas, rjm);
+  $("startRjmRow").hidden = !c.rjm;
+  $("startHint").hidden = !fromPrev;
+}
+
+async function generate() {
+  const c = church();
+  showMsg("");
+  const needSettings = text => { showMsg(text); $("settings").open = true; };
+  if (!c.organistas.length) return needSettings("Falta a lista de organistas de " + c.name + ". Escreva os nomes no passo 1, em “Mudar organistas”.");
+  if (!c.days.length) return needSettings("Marque pelo menos um dia de culto de " + c.name + " no passo 1, em “Mudar organistas”.");
+  if (c.rjm && !c.rjmOrganistas.length) return needSettings("Falta a lista de organistas da Reunião de Jovens de " + c.name + ". Escreva os nomes no passo 1.");
+
+  if (sched()) {
+    const ok = await ask({
+      title: "Montar de novo o rodízio de " + monthName() + "?",
+      text: "Este mês já tem rodízio. Se montar de novo, as trocas que você fez à mão em " + monthName() + " serão perdidas.",
+      ok: "Montar de novo", cancel: "Manter como está"
+    });
+    if (!ok) return;
+  }
 
   // A cada culto a lista "anda" uma posição: quem faz o culto hoje faz a
   // meia hora do próximo, e todas alternam entre os papéis com o tempo.
   const list = c.organistas;
-  const start = Math.max(0, list.indexOf(startCulto.value));
-  const at = (k) => list[k % list.length];
-
-  const cultoDays = datesInMonth(state.year, state.month, c.days);
-  const cultoRows = cultoDays.map((day, k) => {
+  const start = Math.max(0, list.indexOf($("startCulto").value));
+  const at = k => list[k % list.length];
+  const cultoRows = datesInMonth(state.year, state.month, c.days).map((day, k) => {
     const row = { day, meiaHora: at(start + k), culto: at(start + k + 1) };
     if (c.suplente) row.suplente = at(start + k + 2);
     return row;
   });
 
-  let rjmRows = [], rjmNext = "";
+  let rjmRows = [];
   if (c.rjm) {
     const rl = c.rjmOrganistas;
-    const rs = Math.max(0, rl.indexOf(startRjm.value));
-    const rat = (k) => rl[k % rl.length];
-    const sundays = datesInMonth(state.year, state.month, [0]);
-    rjmRows = sundays.map((day, k) => ({ day, organista: rat(rs + k) }));
-    rjmNext = rat(rs + sundays.length);
+    const rs = Math.max(0, rl.indexOf($("startRjm").value));
+    rjmRows = datesInMonth(state.year, state.month, [0]).map((day, k) => ({ day, organista: rl[(rs + k) % rl.length] }));
   }
 
   const prev = sched();
-  state.schedules[schedKey()] = {
+  state.schedules[keyFor(c.id, state.year, state.month)] = {
     cultoRows, rjmRows,
+    days: c.days.slice(),
     ensaio: prev ? prev.ensaio : "",
-    limpeza: prev ? prev.limpeza : "",
-    nextCulto: at(start + cultoDays.length),
-    nextRjm: rjmNext
+    limpeza: prev ? prev.limpeza : ""
   };
   save();
+  $("settings").open = false;
+  renderMonth();
   renderSheet();
+  scrollToEl($("step4"));
 }
+$("btnGenerate").addEventListener("click", generate);
 
 /* ============================================================
-   Render da folha (prévia editável)
+   Passo 4: conferir, ajustar e baixar
 ============================================================ */
-function nameSelect(list, value, onChange) {
-  const sel = document.createElement("select");
+function nameSelect(list, value, label, onChange) {
+  const sel = el("select");
+  sel.setAttribute("aria-label", label);
   sel.add(new Option("—", ""));
-  const opts = [...list];
+  const opts = list.slice();
   if (value && !opts.includes(value)) opts.push(value);
   opts.forEach(n => sel.add(new Option(n, n)));
   sel.value = value || "";
@@ -532,267 +844,99 @@ function nameSelect(list, value, onChange) {
   return sel;
 }
 
-function dateCell(day) {
-  const td = document.createElement("td");
-  td.className = "date";
-  const wd = new Date(state.year, state.month, day).getDay();
-  td.innerHTML = String(day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0") +
-    '<span class="wd">' + WEEKDAYS_SHORT[wd] + "</span>";
-  return td;
+function buildTable(cols, rows, list, onRemove) {
+  const head = el("tr");
+  ["Data"].concat(cols.map(c => c[1])).concat([""]).forEach(h => head.append(el("th", { textContent: h })));
+  const body = el("tbody");
+  rows.forEach((row, idx) => {
+    const tr = el("tr");
+    tr.append(el("td", { className: "date" },
+      [el("b", { textContent: fmtDay(row.day) }), el("small", { textContent: WEEKDAYS_SHORT[wdOf(row.day)] })]));
+    cols.forEach(([key, label]) => {
+      const td = el("td", { className: "name" });
+      td.dataset.label = label;
+      td.append(nameSelect(list, row[key], label + " em " + fmtDay(row.day), v => { row[key] = v; }));
+      tr.append(td);
+    });
+    const rm = el("button", { type: "button", textContent: "Remover" });
+    rm.setAttribute("aria-label", "Remover a data " + fmtDay(row.day));
+    rm.addEventListener("click", () => onRemove(idx));
+    tr.append(el("td", { className: "rm" }, [rm]));
+    body.append(tr);
+  });
+  return el("table", null, [el("thead", null, [head]), body]);
+}
+
+async function removeRow(rows, idx, canReAdd) {
+  const day = rows[idx].day;
+  const ok = await ask({
+    title: "Remover o dia " + fmtDay(day) + "?",
+    text: "Esta data sai do rodízio." + (canReAdd ? " Você pode incluí-la de novo logo abaixo da tabela." : ""),
+    ok: "Remover", cancel: "Não remover", danger: true
+  });
+  if (!ok) return;
+  rows.splice(idx, 1);
+  save();
+  renderSheet();
 }
 
 function renderSheet() {
-  const s = sched();
-  const c = church();
-  sheetEl.innerHTML = "";
-  if (!s) {
-    sheetEl.innerHTML = '<div class="empty-note">Escolha a igreja e o mês ao lado e clique em <b>Gerar rodízio</b>.<br>Depois de gerado, clique em qualquer nome para trocar a organista.</div>';
-    nextHint.textContent = "";
-    return;
+  const s = sched(), c = church();
+  $("emptyNote").hidden = !!s;
+  $("result").hidden = !s;
+  if (!s) return;
+
+  const sheet = $("sheet");
+  sheet.innerHTML = "";
+  const days = s.days || c.days;
+  sheet.append(el("div", { className: "banner" }, [
+    el("h3", { textContent: "RODÍZIO " + c.name.toUpperCase() }),
+    el("div", { textContent: monthName() + " de " + state.year + " · Cultos: " + days.map(d => WEEKDAYS_SHORT[d]).join(", ") })
+  ]));
+
+  const cols = [["meiaHora", "Meia hora"], ["culto", "Culto"]].concat(c.suplente ? [["suplente", "Suplente"]] : []);
+  sheet.append(buildTable(cols, s.cultoRows, c.organistas, idx => removeRow(s.cultoRows, idx, true)));
+
+  if (c.rjm && s.rjmRows && s.rjmRows.length) {
+    sheet.append(el("div", { className: "section", textContent: "Reunião de Jovens e Menores — domingos" }));
+    sheet.append(buildTable([["organista", "Organista"]], s.rjmRows, c.rjmOrganistas,
+      idx => removeRow(s.rjmRows, idx, false)));
   }
 
-  const title = document.createElement("div");
-  title.className = "s-title";
-  title.innerHTML = "<h3>RODÍZIO " + esc(c.name.toUpperCase()) + "</h3><div>" +
-    MONTHS[state.month] + " de " + state.year + " · Cultos: " +
-    c.days.map(d => WEEKDAYS_SHORT[d]).join(", ") + "</div>";
-  sheetEl.appendChild(title);
+  $("ensaio").value = s.ensaio || "";
+  $("limpeza").value = s.limpeza || "";
 
-  // ----- tabela do culto -----
-  const tbl = document.createElement("table");
-  const head = tbl.insertRow();
-  ["Data", "Meia Hora", "Culto"].concat(c.suplente ? ["Suplente"] : []).concat([""])
-    .forEach(h => { const th = document.createElement("th"); th.textContent = h; head.appendChild(th); });
-
-  s.cultoRows.forEach((row, idx) => {
-    const tr = tbl.insertRow();
-    tr.appendChild(dateCell(row.day));
-    ["meiaHora", "culto"].concat(c.suplente ? ["suplente"] : []).forEach(k => {
-      const td = tr.insertCell();
-      td.appendChild(nameSelect(c.organistas, row[k], v => { row[k] = v; }));
-    });
-    tr.appendChild(removeCell(() => { s.cultoRows.splice(idx, 1); save(); renderSheet(); }));
-  });
-  sheetEl.appendChild(tbl);
-  sheetEl.appendChild(addDateButton("+ Adicionar data de culto", day => {
-    s.cultoRows.push({ day, meiaHora: "", culto: "", ...(c.suplente ? { suplente: "" } : {}) });
-    s.cultoRows.sort((a, b) => a.day - b.day);
-    save(); renderSheet();
-  }));
-
-  // ----- RJM -----
-  if (c.rjm) {
-    const h = document.createElement("div");
-    h.className = "section-head";
-    h.textContent = "Reunião de Jovens e Menores — domingos";
-    sheetEl.appendChild(h);
-
-    const t2 = document.createElement("table");
-    const h2 = t2.insertRow();
-    ["Data", "Organista", ""].forEach(x => {
-      const th = document.createElement("th"); th.textContent = x; h2.appendChild(th);
-    });
-    s.rjmRows.forEach((row, idx) => {
-      const tr = t2.insertRow();
-      tr.appendChild(dateCell(row.day));
-      const td = tr.insertCell();
-      td.appendChild(nameSelect(c.rjmOrganistas, row.organista, v => { row.organista = v; }));
-      tr.appendChild(removeCell(() => { s.rjmRows.splice(idx, 1); save(); renderSheet(); }));
-    });
-    sheetEl.appendChild(t2);
+  const add = $("addDay");
+  add.innerHTML = "";
+  const taken = s.cultoRows.map(r => r.day);
+  const last = new Date(state.year, state.month + 1, 0).getDate();
+  for (let d = 1; d <= last; d++) {
+    if (!taken.includes(d)) add.add(new Option(WEEKDAYS_CHIP[wdOf(d)] + ", " + fmtDay(d), d));
   }
-
-  // ----- observações -----
-  const notes = document.createElement("div");
-  notes.className = "notes";
-  notes.appendChild(noteInput("Ensaio:", s.ensaio, v => { s.ensaio = v; }));
-  notes.appendChild(noteInput("Limpeza/Escala:", s.limpeza, v => { s.limpeza = v; }));
-  sheetEl.appendChild(notes);
-
-  nextHint.textContent = s.nextCulto
-    ? "No próximo mês, a meia hora começa com: " + s.nextCulto + (s.nextRjm ? " · RJM: " + s.nextRjm : "")
-    : "";
+  add.disabled = $("btnAddDay").disabled = !add.options.length;
 }
 
-function removeCell(onRemove) {
-  const td = document.createElement("td");
-  td.className = "rm";
-  const b = document.createElement("button");
-  b.textContent = "✕";
-  b.title = "Remover esta data";
-  b.addEventListener("click", onRemove);
-  td.appendChild(b);
-  return td;
-}
-
-function addDateButton(label, onAdd) {
-  const b = document.createElement("button");
-  b.className = "small adddate";
-  b.textContent = label;
-  b.addEventListener("click", () => {
-    const v = prompt("Dia do mês (1 a 31):");
-    const day = parseInt(v, 10);
-    const max = new Date(state.year, state.month + 1, 0).getDate();
-    if (!day || day < 1 || day > max) { if (v !== null) alert("Dia inválido."); return; }
-    onAdd(day);
-  });
-  return b;
-}
-
-function noteInput(label, value, onChange) {
-  const lab = document.createElement("label");
-  lab.textContent = label;
-  const inp = document.createElement("input");
-  inp.type = "text";
-  inp.value = value || "";
-  inp.addEventListener("input", () => { onChange(inp.value); save(); });
-  lab.appendChild(inp);
-  return lab;
-}
-
-function esc(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+$("btnAddDay").addEventListener("click", () => {
+  const s = sched(), c = church();
+  const day = parseInt($("addDay").value, 10);
+  if (!s || !day) return;
+  const row = { day, meiaHora: "", culto: "" };
+  if (c.suplente) row.suplente = "";
+  s.cultoRows.push(row);
+  s.cultoRows.sort((a, b) => a.day - b.day);
+  save();
+  renderSheet();
+});
+$("ensaio").addEventListener("input", () => { const s = sched(); if (s) { s.ensaio = $("ensaio").value; save(); } });
+$("limpeza").addEventListener("input", () => { const s = sched(); if (s) { s.limpeza = $("limpeza").value; save(); } });
 
 /* ============================================================
-   Exportação PNG (desenhada em canvas — funciona offline)
+   Imagem PNG (desenhada em canvas — funciona offline)
 ============================================================ */
-function downloadPng() {
-  const s = sched();
-  const c = church();
-  if (!s) { alert("Gere o rodízio primeiro."); return; }
-
-  const SCALE = 2, W = 700, PAD = 28;
-  const cols = c.suplente ? ["Data", "Meia Hora", "Culto", "Suplente"] : ["Data", "Meia Hora", "Culto"];
-  const rowH = 50, headRowH = 42, titleH = 104, sectionH = 58;
-
-  let H = PAD + titleH + 14 + headRowH + s.cultoRows.length * rowH;
-  if (c.rjm) H += sectionH + headRowH + s.rjmRows.length * rowH;
-  const hasNotes = (s.ensaio || s.limpeza);
-  if (hasNotes) H += 32 + (s.ensaio ? 36 : 0) + (s.limpeza ? 36 : 0);
-  H += PAD;
-
-  const cv = document.createElement("canvas");
-  cv.width = W * SCALE; cv.height = H * SCALE;
-  const g = cv.getContext("2d");
-  g.scale(SCALE, SCALE);
-
-  // fundo
-  g.fillStyle = "#ffffff";
-  g.fillRect(0, 0, W, H);
-
-  // título
-  let y = PAD;
-  roundRect(g, PAD, y, W - 2 * PAD, titleH, 10);
-  g.fillStyle = "#2b2150"; g.fill();
-  g.fillStyle = "#fff7ee";
-  g.textAlign = "center";
-  g.font = "700 36px Georgia, serif";
-  g.fillText("RODÍZIO " + c.name.toUpperCase(), W / 2, y + 48);
-  g.font = "19px Arial, sans-serif";
-  g.globalAlpha = .85;
-  g.fillText(MONTHS[state.month] + " de " + state.year + "  ·  Cultos: " + c.days.map(d => WEEKDAYS_SHORT[d]).join(", "), W / 2, y + 78);
-  g.globalAlpha = 1;
-  y += titleH + 14;
-
-  y = drawTable(g, cols, s.cultoRows.map(r => rowValues(r, c.suplente)), y, W, PAD, headRowH, rowH);
-
-  if (c.rjm) {
-    y += 12;
-    roundRect(g, PAD, y, W - 2 * PAD, sectionH - 12, 8);
-    g.fillStyle = "#efeafd"; g.fill();
-    g.fillStyle = "#2b2150";
-    g.textAlign = "left";
-    g.font = "700 19px Arial, sans-serif";
-    g.fillText("REUNIÃO DE JOVENS E MENORES — DOMINGOS", PAD + 14, y + (sectionH - 12) / 2 + 7);
-    y += sectionH;
-    y = drawTable(g, ["Data", "Organista"], s.rjmRows.map(r => [fmtDate(r.day), r.organista || "—"]), y, W, PAD, headRowH, rowH);
-  }
-
-  if (hasNotes) {
-    y += 26;
-    g.textAlign = "left";
-    g.fillStyle = "#241d3d";
-    if (s.ensaio) {
-      g.font = "700 20px Arial, sans-serif"; g.fillText("Ensaio:", PAD, y);
-      g.font = "20px Arial, sans-serif"; g.fillText(s.ensaio, PAD + 95, y);
-      y += 36;
-    }
-    if (s.limpeza) {
-      g.font = "700 20px Arial, sans-serif"; g.fillText("Limpeza/Escala:", PAD, y);
-      g.font = "20px Arial, sans-serif"; g.fillText(s.limpeza, PAD + 180, y);
-      y += 36;
-    }
-  }
-
-  const name = "RODIZIO_" + c.name.replace(/\s+/g, "_").toUpperCase() + "_" +
-    MONTHS[state.month].toUpperCase() + "_" + state.year + ".png";
-  cv.toBlob(blob => openPngModal(blob, name), "image/png");
-}
-
-let pngUrl = null;
-function openPngModal(blob, name) {
-  if (pngUrl) URL.revokeObjectURL(pngUrl);
-  pngUrl = URL.createObjectURL(blob);
-  $("pngImg").src = pngUrl;
-  const save = $("pngSave");
-  save.href = pngUrl;
-  save.download = name;
-
-  const shareBtn = $("pngShare");
-  let file = null;
-  try { file = new File([blob], name, { type: "image/png" }); } catch (e) { /* navegador antigo */ }
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-    shareBtn.hidden = false;
-    shareBtn.onclick = () => navigator.share({ files: [file] }).catch(() => {});
-  } else {
-    shareBtn.hidden = true;
-  }
-  $("pngModal").hidden = false;
-}
-function closePngModal() { $("pngModal").hidden = true; }
-$("pngClose").addEventListener("click", closePngModal);
-$("pngBack").addEventListener("click", closePngModal);
-
-function fmtDate(day) {
-  const wd = new Date(state.year, state.month, day).getDay();
-  return String(day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0") + " · " + WEEKDAYS_SHORT[wd];
-}
-
-function rowValues(r, suplente) {
-  const vals = [fmtDate(r.day), r.meiaHora || "—", r.culto || "—"];
-  if (suplente) vals.push(r.suplente || "—");
-  return vals;
-}
-
-function drawTable(g, cols, rows, y, W, PAD, headRowH, rowH) {
-  const innerW = W - 2 * PAD;
-  const dateW = 168;
-  const nameW = (innerW - dateW) / (cols.length - 1);
-  const colX = i => PAD + (i === 0 ? 0 : dateW + (i - 1) * nameW);
-  const colW = i => (i === 0 ? dateW : nameW);
-
-  // cabeçalho
-  g.textAlign = "left";
-  g.font = "700 16px Arial, sans-serif";
-  g.fillStyle = "#6c4fd1";
-  cols.forEach((h, i) => g.fillText(h.toUpperCase(), colX(i) + 8, y + 27));
-  g.strokeStyle = "#2b2150"; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(PAD, y + headRowH); g.lineTo(W - PAD, y + headRowH); g.stroke();
-  y += headRowH;
-
-  rows.forEach((vals, r) => {
-    if (r % 2 === 1) { g.fillStyle = "#f6f3fb"; g.fillRect(PAD, y, innerW, rowH); }
-    g.fillStyle = "#241d3d";
-    vals.forEach((v, i) => {
-      g.font = (i === 0 ? "600 " : "") + "22px Arial, sans-serif";
-      g.fillText(String(v), colX(i) + 8, y + rowH / 2 + 8, colW(i) - 16);
-    });
-    g.strokeStyle = "#e8e3f2"; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(PAD, y + rowH); g.lineTo(W - PAD, y + rowH); g.stroke();
-    y += rowH;
-  });
-  return y;
+function tint(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = v => Math.round(255 + (v - 255) * amount);
+  return "rgb(" + ch(n >> 16 & 255) + "," + ch(n >> 8 & 255) + "," + ch(n & 255) + ")";
 }
 
 function roundRect(g, x, y, w, h, r) {
@@ -805,63 +949,157 @@ function roundRect(g, x, y, w, h, r) {
   g.closePath();
 }
 
-/* ============================================================
-   Eventos
-============================================================ */
-churchSelect.addEventListener("change", () => {
-  state.selected = churchSelect.value; save(); renderConfig(); renderSheet();
-});
-$("btnAddChurch").addEventListener("click", () => {
-  const name = prompt("Nome da nova igreja:");
-  if (!name || !name.trim()) return;
-  const id = "igreja-" + Date.now();
-  state.churches.push({ id, name: name.trim(), days: [0], organistas: [], suplente: false, rjm: true, rjmOrganistas: [] });
-  state.selected = id;
-  save(); renderConfig(); renderSheet();
-});
-$("btnRenameChurch").addEventListener("click", () => {
-  const c = church();
-  const name = prompt("Novo nome da igreja:", c.name);
-  if (!name || !name.trim()) return;
-  c.name = name.trim(); save(); renderConfig(); renderSheet();
-});
-$("btnDelChurch").addEventListener("click", () => {
-  const c = church();
-  if (state.churches.length === 1) { alert("É preciso ter pelo menos uma igreja."); return; }
-  if (!confirm("Excluir a igreja “" + c.name + "” e seus rodízios?")) return;
-  state.churches = state.churches.filter(x => x.id !== c.id);
-  state.deletedIds = state.deletedIds || [];
-  state.deletedIds.push(c.id);
-  Object.keys(state.schedules).forEach(k => { if (k.startsWith(c.id + "|")) delete state.schedules[k]; });
-  state.selected = state.churches[0].id;
-  save(); renderConfig(); renderSheet();
-});
-organistasTa.addEventListener("change", () => {
-  church().organistas = parseLines(organistasTa.value);
-  save(); fillStartSelect(startCulto, church().organistas);
-});
-rjmTa.addEventListener("change", () => {
-  church().rjmOrganistas = parseLines(rjmTa.value);
-  save(); fillStartSelect(startRjm, church().rjmOrganistas);
-});
-hasRjm.addEventListener("change", () => {
-  church().rjm = hasRjm.checked; save(); renderConfig(); renderSheet();
-});
-hasSuplente.addEventListener("change", () => {
-  church().suplente = hasSuplente.checked; save();
-});
-monthSelect.addEventListener("change", () => {
-  state.month = parseInt(monthSelect.value, 10); save(); renderSheet();
-});
-yearInput.addEventListener("change", () => {
-  const y = parseInt(yearInput.value, 10);
-  if (y >= 2020 && y <= 2100) { state.year = y; save(); renderSheet(); }
-});
-$("btnGenerate").addEventListener("click", generate);
+function drawTable(g, color, cols, rows, y, W, PAD, headRowH, rowH) {
+  const innerW = W - 2 * PAD;
+  const dateW = 168;
+  const nameW = (innerW - dateW) / (cols.length - 1);
+  const colX = i => PAD + (i === 0 ? 0 : dateW + (i - 1) * nameW);
+  const colW = i => (i === 0 ? dateW : nameW);
+
+  g.textAlign = "left";
+  g.font = "700 16px Arial, sans-serif";
+  g.fillStyle = color;
+  cols.forEach((h, i) => g.fillText(h.toUpperCase(), colX(i) + 8, y + 27));
+  g.strokeStyle = color;
+  g.lineWidth = 2;
+  g.beginPath(); g.moveTo(PAD, y + headRowH); g.lineTo(W - PAD, y + headRowH); g.stroke();
+  y += headRowH;
+
+  rows.forEach((vals, r) => {
+    if (r % 2 === 1) { g.fillStyle = tint(color, .06); g.fillRect(PAD, y, innerW, rowH); }
+    g.fillStyle = "#241d3d";
+    vals.forEach((v, i) => {
+      g.font = (i === 0 ? "600 " : "") + "22px Arial, sans-serif";
+      g.fillText(String(v), colX(i) + 8, y + rowH / 2 + 8, colW(i) - 16);
+    });
+    g.strokeStyle = "#e8e4ee";
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(PAD, y + rowH); g.lineTo(W - PAD, y + rowH); g.stroke();
+    y += rowH;
+  });
+  return y;
+}
+
+function pngDate(day) { return fmtDay(day) + " · " + WEEKDAYS_SHORT[wdOf(day)]; }
+
+function downloadPng() {
+  const s = sched(), c = church();
+  if (!s) return;
+  const color = c.color;
+  const showRjm = c.rjm && s.rjmRows && s.rjmRows.length;
+  const days = s.days || c.days;
+
+  const SCALE = 2, W = 700, PAD = 28;
+  const cols = c.suplente ? ["Data", "Meia Hora", "Culto", "Suplente"] : ["Data", "Meia Hora", "Culto"];
+  const rowH = 50, headRowH = 42, titleH = 104, sectionH = 58;
+
+  let H = PAD + titleH + 14 + headRowH + s.cultoRows.length * rowH;
+  if (showRjm) H += sectionH + headRowH + s.rjmRows.length * rowH;
+  const hasNotes = s.ensaio || s.limpeza;
+  if (hasNotes) H += 32 + (s.ensaio ? 36 : 0) + (s.limpeza ? 36 : 0);
+  H += PAD;
+
+  const cv = document.createElement("canvas");
+  cv.width = W * SCALE;
+  cv.height = H * SCALE;
+  const g = cv.getContext("2d");
+  g.scale(SCALE, SCALE);
+  g.fillStyle = "#ffffff";
+  g.fillRect(0, 0, W, H);
+
+  let y = PAD;
+  roundRect(g, PAD, y, W - 2 * PAD, titleH, 10);
+  g.fillStyle = color;
+  g.fill();
+  g.fillStyle = "#ffffff";
+  g.textAlign = "center";
+  g.font = "700 36px Georgia, serif";
+  g.fillText("RODÍZIO " + c.name.toUpperCase(), W / 2, y + 48, W - 2 * PAD - 24);
+  g.font = "19px Arial, sans-serif";
+  g.globalAlpha = .9;
+  g.fillText(monthName() + " de " + state.year + "  ·  Cultos: " + days.map(d => WEEKDAYS_SHORT[d]).join(", "), W / 2, y + 78);
+  g.globalAlpha = 1;
+  y += titleH + 14;
+
+  const cultoVals = s.cultoRows.map(r => {
+    const v = [pngDate(r.day), r.meiaHora || "—", r.culto || "—"];
+    if (c.suplente) v.push(r.suplente || "—");
+    return v;
+  });
+  y = drawTable(g, color, cols, cultoVals, y, W, PAD, headRowH, rowH);
+
+  if (showRjm) {
+    y += 12;
+    roundRect(g, PAD, y, W - 2 * PAD, sectionH - 12, 8);
+    g.fillStyle = tint(color, .14);
+    g.fill();
+    g.fillStyle = color;
+    g.textAlign = "left";
+    g.font = "700 19px Arial, sans-serif";
+    g.fillText("REUNIÃO DE JOVENS E MENORES — DOMINGOS", PAD + 14, y + (sectionH - 12) / 2 + 7, W - 2 * PAD - 28);
+    y += sectionH;
+    y = drawTable(g, color, ["Data", "Organista"], s.rjmRows.map(r => [pngDate(r.day), r.organista || "—"]),
+      y, W, PAD, headRowH, rowH);
+  }
+
+  if (hasNotes) {
+    y += 32;
+    g.textAlign = "left";
+    g.fillStyle = "#241d3d";
+    [["Ensaio:", s.ensaio], ["Limpeza/Escala:", s.limpeza]].forEach(([label, value]) => {
+      if (!value) return;
+      g.font = "700 20px Arial, sans-serif";
+      g.fillText(label, PAD, y);
+      const off = g.measureText(label).width + 10;
+      g.font = "20px Arial, sans-serif";
+      g.fillText(value, PAD + off, y, W - 2 * PAD - off);
+      y += 36;
+    });
+  }
+
+  const name = "RODIZIO_" + c.name.replace(/\s+/g, "_").toUpperCase() + "_" +
+    monthName().toUpperCase() + "_" + state.year + ".png";
+  cv.toBlob(blob => openPngModal(blob, name), "image/png");
+}
+
+let pngUrl = null;
+function openPngModal(blob, name) {
+  if (pngUrl) URL.revokeObjectURL(pngUrl);
+  pngUrl = URL.createObjectURL(blob);
+  $("pngImg").src = pngUrl;
+  $("pngSave").href = pngUrl;
+  $("pngSave").download = name;
+
+  const shareBtn = $("pngShare");
+  let file = null;
+  try { file = new File([blob], name, { type: "image/png" }); } catch (e) { /* navegador antigo */ }
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    shareBtn.hidden = false;
+    shareBtn.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+  } else {
+    shareBtn.hidden = true;
+  }
+  $("pngModal").hidden = false;
+  $("pngSave").focus();
+}
+function closePngModal() { $("pngModal").hidden = true; }
+$("pngClose").addEventListener("click", closePngModal);
+$("pngBack").addEventListener("click", closePngModal);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pngModal").hidden) closePngModal(); });
 $("btnPng").addEventListener("click", downloadPng);
 
-renderConfig();
-renderSheet();
+/* ============================================================
+   Início
+============================================================ */
+function renderAll() {
+  applyColor();
+  renderChurches();
+  renderSettings();
+  renderMonth();
+  renderStart();
+  renderSheet();
+}
+renderAll();
 </script>
 </body>
 </html>
