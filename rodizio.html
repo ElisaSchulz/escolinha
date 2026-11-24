@@ -484,7 +484,7 @@ const PALETTE = [
 
 function defaultChurches() {
   return [
-    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4,6], umaFora: true,
+    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4], umaFora: true,
       organistas: ["Elaine","Helena","Elcivani","Luciana","Rita","Rute","Juciele","Andreza","Maria","Gislaine"],
       suplente: false, rjm: true,
       rjmOrganistas: ["Elaine","Helena","Luciana","Rita","Rute","Juciele","Gislaine"] },
@@ -533,6 +533,15 @@ function load() {
   Object.values(st.schedules).forEach(s => (s.rjmRows || []).forEach(r => {
     if (r.organista === undefined) r.organista = r.meiaHora || "";
   }));
+
+  // Correções feitas uma única vez nos dados já salvos.
+  st.ajustes = st.ajustes || [];
+  if (!st.ajustes.includes("boa-vista-sem-sabado")) {
+    // A Boa Vista veio com sábado por engano (cabeçalho antigo da planilha); tem culto só na quinta e no domingo.
+    const bv = st.churches.find(c => c.id === "boa-vista");
+    if (bv && bv.days.join(",") === "0,4,6") bv.days = [0, 4];
+    st.ajustes.push("boa-vista-sem-sabado");
+  }
 
   // Igrejas padrão novas entram em estados já salvos, exceto as excluídas de propósito.
   const defs = defaultChurches();
