@@ -179,6 +179,13 @@
 
   /* ---------- passo 3 ---------- */
   .start-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .leave-note {
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--soft);
+    background: color-mix(in srgb, var(--c) 12%, var(--card));
+    font-weight: 600;
+  }
   .msg {
     border: 2px solid var(--danger);
     color: var(--danger);
@@ -333,6 +340,13 @@
           <textarea id="organistas"></textarea>
         </label>
 
+        <div class="field">
+          <span class="label">Organistas de licença</span>
+          <span class="hint">Marque quem está afastada por um tempo. Nos dias dela, entra outra organista,
+          com a letra dela ao lado do nome. Por exemplo: Ana Claudia (D). Quando ela voltar, é só desmarcar.</span>
+          <div class="days" id="leaveBox"></div>
+        </div>
+
         <label class="check"><input type="checkbox" id="hasSuplente"> Tem organista suplente</label>
         <label class="check"><input type="checkbox" id="hasRjm"> Tem Reunião de Jovens e Menores aos domingos</label>
 
@@ -375,6 +389,7 @@
       <select id="startRjm"></select>
     </label>
     <p class="hint" id="startHint">Já escolhido para continuar de onde parou no mês anterior.</p>
+    <p class="leave-note" id="leaveHint" hidden></p>
     <div class="msg" id="msg" role="alert" hidden></div>
     <button type="button" class="primary big" id="btnGenerate"></button>
   </section>
@@ -526,6 +541,46 @@ function prevSched() {
 }
 function monthName() { return MONTHS[state.month]; }
 function parseLines(text) { return text.split("\n").map(s => s.trim()).filter(Boolean); }
+function leaveOf(c) { return c.licenca || []; }
+function baseName(n) { return (n || "").replace(/\s*\([^)]*\)\s*$/, ""); }
+function subLabel(name, away) { return name + " (" + away.charAt(0).toUpperCase() + ")"; }
+function joinNames(names) {
+  return names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " e " + names[names.length - 1];
+}
+
+// Troca, nas linhas do rodízio, quem está de licença por uma substituta:
+// quem tem menos vezes no mês, não está no mesmo culto e, se possível, não
+// toca no culto anterior nem no seguinte. O nome original fica em row.orig
+// para o mês seguinte continuar o rodízio do ponto certo.
+function fillLeave(rows, fields, list, leave) {
+  if (!leave.length) return;
+  const count = {};
+  rows.forEach(r => fields.forEach(f => {
+    if (r[f] && !leave.includes(r[f])) count[r[f]] = (count[r[f]] || 0) + 1;
+  }));
+  rows.forEach((r, i) => fields.forEach(f => {
+    const away = r[f];
+    if (!leave.includes(away)) return;
+    const inRow = fields.map(g => baseName(r[g]));
+    const near = [rows[i - 1], rows[i + 1]].filter(Boolean).flatMap(x => fields.map(g => baseName(x[g])));
+    const from = list.indexOf(away);
+    const dist = n => (list.indexOf(n) - from + list.length) % list.length;
+    const cands = list.filter(n => !leave.includes(n) && !inRow.includes(n));
+    r.orig = r.orig || {};
+    r.orig[f] = away;
+    if (!cands.length) { r[f] = ""; return; }
+    cands.sort((a, b) => (count[a] || 0) - (count[b] || 0) ||
+      Number(near.includes(a)) - Number(near.includes(b)) || dist(a) - dist(b));
+    count[cands[0]] = (count[cands[0]] || 0) + 1;
+    r[f] = subLabel(cands[0], away);
+  }));
+}
+
+// Nome de quem ocupa esta posição no rodízio (a titular, se houve substituição).
+function slotName(row, field, list) {
+  const n = (row.orig && row.orig[field]) || row[field];
+  return list.includes(n) ? n : baseName(n);
+}
 function fmtDay(day) { return String(day).padStart(2, "0") + "/" + String(state.month + 1).padStart(2, "0"); }
 function wdOf(day) { return new Date(state.year, state.month, day).getDay(); }
 
@@ -628,6 +683,7 @@ function renderSettings() {
 
   $("organistas").value = c.organistas.join("\n");
   $("rjmOrganistas").value = c.rjmOrganistas.join("\n");
+  renderLeave();
   $("hasSuplente").checked = c.suplente;
   $("hasRjm").checked = c.rjm;
   $("rjmField").hidden = !c.rjm;
@@ -650,6 +706,24 @@ function renderSettings() {
   });
 
   $("btnDelChurch").textContent = "Excluir a igreja " + c.name;
+}
+
+function renderLeave() {
+  const c = church();
+  const box = $("leaveBox");
+  box.innerHTML = "";
+  const names = [...new Set(c.organistas.concat(c.rjm ? c.rjmOrganistas : []))];
+  names.forEach(n => {
+    const cb = el("input", { type: "checkbox", checked: leaveOf(c).includes(n) });
+    cb.addEventListener("change", () => {
+      c.licenca = cb.checked ? [...new Set(leaveOf(c).concat(n))] : leaveOf(c).filter(x => x !== n);
+      save();
+      renderStart();
+      renderSheet();
+    });
+    box.append(el("label", { className: "chip" }, [cb, n]));
+  });
+  if (!names.length) box.append(el("span", { className: "hint", textContent: "Escreva primeiro a lista de organistas acima." }));
 }
 
 function addChurch() {
@@ -678,12 +752,14 @@ $("nameInput").addEventListener("input", () => {
 $("organistas").addEventListener("input", () => {
   church().organistas = parseLines($("organistas").value);
   save();
+  renderLeave();
   renderStart();
   renderSheet();
 });
 $("rjmOrganistas").addEventListener("input", () => {
   church().rjmOrganistas = parseLines($("rjmOrganistas").value);
   save();
+  renderLeave();
   renderStart();
   renderSheet();
 });
@@ -696,6 +772,7 @@ $("hasRjm").addEventListener("change", () => {
   church().rjm = $("hasRjm").checked;
   $("rjmField").hidden = !church().rjm;
   save();
+  renderLeave();
   renderStart();
   renderSheet();
 });
@@ -755,7 +832,7 @@ function fillSelect(sel, list, value) {
 
 function nextAfter(list, rows, field) {
   if (!rows || !rows.length) return null;
-  const i = list.indexOf(rows[rows.length - 1][field]);
+  const i = list.indexOf(slotName(rows[rows.length - 1], field, list));
   return i >= 0 ? list[(i + 1) % list.length] : null;
 }
 
@@ -763,8 +840,8 @@ function renderStart() {
   const c = church(), s = sched();
   let culto = null, rjm = null, fromPrev = false;
   if (s) {
-    culto = s.cultoRows[0] && s.cultoRows[0].meiaHora;
-    rjm = s.rjmRows && s.rjmRows[0] && s.rjmRows[0].organista;
+    culto = s.cultoRows[0] && slotName(s.cultoRows[0], "meiaHora", c.organistas);
+    rjm = s.rjmRows && s.rjmRows[0] && slotName(s.rjmRows[0], "organista", c.rjmOrganistas);
   } else {
     const p = prevSched();
     if (p) {
@@ -777,6 +854,12 @@ function renderStart() {
   fillSelect($("startRjm"), c.rjmOrganistas, rjm);
   $("startRjmRow").hidden = !c.rjm;
   $("startHint").hidden = !fromPrev;
+
+  const away = leaveOf(c).filter(n => c.organistas.includes(n) || (c.rjm && c.rjmOrganistas.includes(n)));
+  $("leaveHint").hidden = !away.length;
+  $("leaveHint").textContent = away.length === 1
+    ? away[0] + " está de licença. Nos dias dela, entra outra organista com (" + away[0].charAt(0).toUpperCase() + ") ao lado do nome."
+    : joinNames(away) + " estão de licença. Nos dias delas, entra outra organista com a letra de quem ela substitui ao lado do nome.";
 }
 
 async function generate() {
@@ -814,6 +897,9 @@ async function generate() {
     rjmRows = datesInMonth(state.year, state.month, [0]).map((day, k) => ({ day, organista: rl[(rs + k) % rl.length] }));
   }
 
+  fillLeave(cultoRows, ["meiaHora", "culto"].concat(c.suplente ? ["suplente"] : []), list, leaveOf(c));
+  if (c.rjm) fillLeave(rjmRows, ["organista"], c.rjmOrganistas, leaveOf(c));
+
   const prev = sched();
   state.schedules[keyFor(c.id, state.year, state.month)] = {
     cultoRows, rjmRows,
@@ -832,19 +918,23 @@ $("btnGenerate").addEventListener("click", generate);
 /* ============================================================
    Passo 4: conferir, ajustar e baixar
 ============================================================ */
-function nameSelect(list, value, label, onChange) {
+function nameSelect(list, leave, value, label, onChange) {
   const sel = el("select");
   sel.setAttribute("aria-label", label);
   sel.add(new Option("—", ""));
-  const opts = list.slice();
-  if (value && !opts.includes(value)) opts.push(value);
-  opts.forEach(n => sel.add(new Option(n, n)));
+  list.forEach(n => sel.add(new Option(leave.includes(n) ? n + " (de licença)" : n, n)));
+  leave.filter(away => list.includes(away)).forEach(away => {
+    const group = el("optgroup", { label: "No lugar da " + away });
+    list.filter(n => !leave.includes(n)).forEach(n => group.append(new Option(subLabel(n, away), subLabel(n, away))));
+    sel.append(group);
+  });
+  if (value && ![...sel.options].some(o => o.value === value)) sel.add(new Option(value, value));
   sel.value = value || "";
   sel.addEventListener("change", () => { onChange(sel.value); save(); });
   return sel;
 }
 
-function buildTable(cols, rows, list, onRemove) {
+function buildTable(cols, rows, list, leave, onRemove) {
   const head = el("tr");
   ["Data"].concat(cols.map(c => c[1])).concat([""]).forEach(h => head.append(el("th", { textContent: h })));
   const body = el("tbody");
@@ -855,7 +945,7 @@ function buildTable(cols, rows, list, onRemove) {
     cols.forEach(([key, label]) => {
       const td = el("td", { className: "name" });
       td.dataset.label = label;
-      td.append(nameSelect(list, row[key], label + " em " + fmtDay(row.day), v => { row[key] = v; }));
+      td.append(nameSelect(list, leave, row[key], label + " em " + fmtDay(row.day), v => { row[key] = v; }));
       tr.append(td);
     });
     const rm = el("button", { type: "button", textContent: "Remover" });
@@ -895,11 +985,11 @@ function renderSheet() {
   ]));
 
   const cols = [["meiaHora", "Meia hora"], ["culto", "Culto"]].concat(c.suplente ? [["suplente", "Suplente"]] : []);
-  sheet.append(buildTable(cols, s.cultoRows, c.organistas, idx => removeRow(s.cultoRows, idx, true)));
+  sheet.append(buildTable(cols, s.cultoRows, c.organistas, leaveOf(c), idx => removeRow(s.cultoRows, idx, true)));
 
   if (c.rjm && s.rjmRows && s.rjmRows.length) {
     sheet.append(el("div", { className: "section", textContent: "Reunião de Jovens e Menores — domingos" }));
-    sheet.append(buildTable([["organista", "Organista"]], s.rjmRows, c.rjmOrganistas,
+    sheet.append(buildTable([["organista", "Organista"]], s.rjmRows, c.rjmOrganistas, leaveOf(c),
       idx => removeRow(s.rjmRows, idx, false)));
   }
 
