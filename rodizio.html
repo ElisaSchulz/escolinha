@@ -109,6 +109,7 @@
     background: var(--card);
   }
   textarea { min-height: 220px; resize: vertical; line-height: 1.6; }
+  textarea.short { min-height: 96px; }
 
   /* ---------- passo 1: igrejas ---------- */
   .churches { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; }
@@ -179,6 +180,7 @@
 
   /* ---------- passo 3 ---------- */
   .start-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .start-field .hint { font-weight: 400; }
   .leave-note {
     border-radius: 10px;
     padding: 12px 14px;
@@ -347,6 +349,19 @@
           <div class="days" id="leaveBox"></div>
         </div>
 
+        <label class="field">
+          <span class="label">Substituta fixa (fora do rodízio)</span>
+          <span class="hint">Organista que não entra no rodízio, mas cobre quem falta. Ela é a primeira
+          escolhida no lugar de quem está de licença. Se houver mais de uma, escreva um nome por linha.</span>
+          <textarea id="substitutas" class="short"></textarea>
+        </label>
+
+        <div class="field">
+          <label class="check"><input type="checkbox" id="umaFora"> Uma organista fica de fora a cada mês</label>
+          <span class="hint">Segue a ordem da lista, uma por mês. Assim as organistas não ficam sempre
+          tocando no mesmo dia da semana.</span>
+        </div>
+
         <label class="check"><input type="checkbox" id="hasSuplente"> Tem organista suplente</label>
         <label class="check"><input type="checkbox" id="hasRjm"> Tem Reunião de Jovens e Menores aos domingos</label>
 
@@ -380,6 +395,11 @@
 
   <section class="step">
     <h2><span class="num">3</span> Monte o rodízio</h2>
+    <div class="start-field" id="foraRow">
+      <label for="foraSel">Quem fica de fora este mês</label>
+      <select id="foraSel"></select>
+      <span class="hint" id="foraHint"></span>
+    </div>
     <label class="start-field">
       Quem faz a meia hora do primeiro culto do mês
       <select id="startCulto"></select>
@@ -425,6 +445,7 @@
   <div class="box" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
     <h3 id="dlgTitle"></h3>
     <p id="dlgText"></p>
+    <input type="text" id="dlgInput" autocomplete="off" hidden>
     <div class="actions">
       <button type="button" id="dlgCancel"></button>
       <button type="button" class="primary" id="dlgOk"></button>
@@ -464,7 +485,7 @@ const PALETTE = [
 
 function defaultChurches() {
   return [
-    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4,6],
+    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4], umaFora: true,
       organistas: ["Elaine","Helena","Elcivani","Luciana","Rita","Rute","Juciele","Andreza","Maria","Gislaine"],
       suplente: false, rjm: true,
       rjmOrganistas: ["Elaine","Helena","Luciana","Rita","Rute","Juciele","Gislaine"] },
@@ -479,6 +500,7 @@ function defaultChurches() {
       suplente: false, rjm: true, rjmOrganistas: ["Thais","Carine"] },
     { id: "lagoa-nova", name: "Lagoa Nova", color: "#0b6e78", days: [0,2,5],
       organistas: ["Albeli","Luciene","Suely","Ana Claudia","Alda","Estefani","Heliara","Delma","Danielle","Emilly","Bruna","Fernanda","Elizete"],
+      substitutas: ["Andreia"],
       suplente: false, rjm: true, rjmOrganistas: ["Karen","Mirielly"] },
     { id: "graminha", name: "Graminha", color: "#2b7a46", days: [0,2,4],
       organistas: ["Lilian","Anita","Edna","Jéssica","Patrícia","Francislene","Beatriz","Meirielly","Viviane","Elaine"],
@@ -513,16 +535,26 @@ function load() {
     if (r.organista === undefined) r.organista = r.meiaHora || "";
   }));
 
+  // Correções feitas uma única vez nos dados já salvos.
+  st.ajustes = st.ajustes || [];
+  if (!st.ajustes.includes("boa-vista-sem-sabado")) {
+    // A Boa Vista veio com sábado por engano (cabeçalho antigo da planilha); tem culto só na quinta e no domingo.
+    const bv = st.churches.find(c => c.id === "boa-vista");
+    if (bv && bv.days.join(",") === "0,4,6") bv.days = [0, 4];
+    st.ajustes.push("boa-vista-sem-sabado");
+  }
+
   // Igrejas padrão novas entram em estados já salvos, exceto as excluídas de propósito.
   const defs = defaultChurches();
   defs.forEach(d => {
     if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) st.churches.push(d);
   });
   st.churches.forEach((c, i) => {
-    if (!c.color) {
-      const d = defs.find(x => x.id === c.id);
-      c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
-    }
+    const d = defs.find(x => x.id === c.id);
+    if (!c.color) c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
+    // Só preenche se o campo nunca existiu: não desfaz o que a usuária escreveu ou apagou.
+    if (c.substitutas === undefined && d && d.substitutas) c.substitutas = d.substitutas.slice();
+    if (c.umaFora === undefined && d && d.umaFora) c.umaFora = true;
   });
   return st;
 }
@@ -542,21 +574,25 @@ function prevSched() {
 function monthName() { return MONTHS[state.month]; }
 function parseLines(text) { return text.split("\n").map(s => s.trim()).filter(Boolean); }
 function leaveOf(c) { return c.licenca || []; }
+function subsOf(c) { return [...new Set(c.substitutas || [])].filter(n => !c.organistas.includes(n)); }
 function baseName(n) { return (n || "").replace(/\s*\([^)]*\)\s*$/, ""); }
 function subLabel(name, away) { return name + " (" + away.charAt(0).toUpperCase() + ")"; }
 function joinNames(names) {
   return names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " e " + names[names.length - 1];
 }
 
-// Troca, nas linhas do rodízio, quem está de licença por uma substituta:
-// quem tem menos vezes no mês, não está no mesmo culto e, se possível, não
-// toca no culto anterior nem no seguinte. O nome original fica em row.orig
-// para o mês seguinte continuar o rodízio do ponto certo.
-function fillLeave(rows, fields, list, leave) {
+// Troca, nas linhas do rodízio, quem está de licença por uma substituta.
+// A substituta fixa (fora do rodízio) vem primeiro; sem ela, entra quem
+// tem menos vezes no mês, não está no mesmo culto e, se possível, não toca
+// no culto anterior nem no seguinte. O nome original fica em row.orig para
+// o mês seguinte continuar o rodízio do ponto certo.
+function fillLeave(rows, fields, list, leave, subs) {
   if (!leave.length) return;
+  subs = subs || [];
   const count = {};
   rows.forEach(r => fields.forEach(f => {
-    if (r[f] && !leave.includes(r[f])) count[r[f]] = (count[r[f]] || 0) + 1;
+    const n = baseName(r[f]);
+    if (n && !leave.includes(n)) count[n] = (count[n] || 0) + 1;
   }));
   rows.forEach((r, i) => fields.forEach(f => {
     const away = r[f];
@@ -565,14 +601,16 @@ function fillLeave(rows, fields, list, leave) {
     const near = [rows[i - 1], rows[i + 1]].filter(Boolean).flatMap(x => fields.map(g => baseName(x[g])));
     const from = list.indexOf(away);
     const dist = n => (list.indexOf(n) - from + list.length) % list.length;
-    const cands = list.filter(n => !leave.includes(n) && !inRow.includes(n));
     r.orig = r.orig || {};
     r.orig[f] = away;
-    if (!cands.length) { r[f] = ""; return; }
+    const fixed = subs.filter(n => !inRow.includes(n)).sort((a, b) => (count[a] || 0) - (count[b] || 0));
+    const cands = list.filter(n => !leave.includes(n) && !inRow.includes(n));
     cands.sort((a, b) => (count[a] || 0) - (count[b] || 0) ||
       Number(near.includes(a)) - Number(near.includes(b)) || dist(a) - dist(b));
-    count[cands[0]] = (count[cands[0]] || 0) + 1;
-    r[f] = subLabel(cands[0], away);
+    const pick = fixed[0] || cands[0];
+    if (!pick) { r[f] = ""; return; }
+    count[pick] = (count[pick] || 0) + 1;
+    r[f] = subLabel(pick, away);
   }));
 }
 
@@ -605,21 +643,30 @@ function el(tag, props, children) {
   return e;
 }
 
+// Janela de confirmação. Com "input", mostra uma caixa de texto e devolve o
+// texto digitado (ou null se cancelar ou deixar em branco).
 function ask(o) {
   return new Promise(resolve => {
+    const withInput = o.input !== undefined;
+    const input = $("dlgInput");
     $("dlgTitle").textContent = o.title;
     $("dlgText").textContent = o.text;
     $("dlgOk").textContent = o.ok;
     $("dlgCancel").textContent = o.cancel || "Cancelar";
     $("dlgOk").className = o.danger ? "danger-fill" : "primary";
+    input.hidden = !withInput;
+    input.value = withInput ? (o.input || "") : "";
     $("dlg").hidden = false;
-    $("dlgCancel").focus();
-    const onKey = e => { if (e.key === "Escape") done(false); };
-    function done(v) {
+    if (withInput) { input.focus(); input.select(); } else $("dlgCancel").focus();
+    const onKey = e => {
+      if (e.key === "Escape") done(false);
+      else if (e.key === "Enter" && withInput && document.activeElement === input) done(true);
+    };
+    function done(ok) {
       $("dlg").hidden = true;
       $("dlgOk").onclick = $("dlgCancel").onclick = $("dlgBack").onclick = null;
       document.removeEventListener("keydown", onKey);
-      resolve(v);
+      resolve(withInput ? (ok && input.value.trim() ? input.value.trim() : null) : ok);
     }
     $("dlgOk").onclick = () => done(true);
     $("dlgCancel").onclick = $("dlgBack").onclick = () => done(false);
@@ -683,8 +730,10 @@ function renderSettings() {
 
   $("organistas").value = c.organistas.join("\n");
   $("rjmOrganistas").value = c.rjmOrganistas.join("\n");
+  $("substitutas").value = (c.substitutas || []).join("\n");
   renderLeave();
   $("hasSuplente").checked = c.suplente;
+  $("umaFora").checked = !!c.umaFora;
   $("hasRjm").checked = c.rjm;
   $("rjmField").hidden = !c.rjm;
 
@@ -763,6 +812,17 @@ $("rjmOrganistas").addEventListener("input", () => {
   renderStart();
   renderSheet();
 });
+$("substitutas").addEventListener("input", () => {
+  church().substitutas = parseLines($("substitutas").value);
+  save();
+  renderStart();
+  renderSheet();
+});
+$("umaFora").addEventListener("change", () => {
+  church().umaFora = $("umaFora").checked;
+  save();
+  renderStart();
+});
 $("hasSuplente").addEventListener("change", () => {
   church().suplente = $("hasSuplente").checked;
   save();
@@ -836,6 +896,63 @@ function nextAfter(list, rows, field) {
   return i >= 0 ? list[(i + 1) % list.length] : null;
 }
 
+// Quem faz a primeira meia hora do mês: quem tocou no último culto do mês
+// anterior (no rodízio, quem toca no culto faz a meia hora do culto seguinte).
+function nextStart(list, rows) {
+  if (!rows || !rows.length) return null;
+  const last = rows[rows.length - 1];
+  const culto = slotName(last, "culto", list);
+  if (list.includes(culto)) return culto;
+  const i = list.indexOf(slotName(last, "meiaHora", list));
+  return i >= 0 ? list[(i + 1) % list.length] : null;
+}
+
+// A próxima da lista depois de "name", sem contar quem está de licença.
+function nextInList(c, name) {
+  const list = c.organistas, i = list.indexOf(name);
+  for (let k = 1; k <= list.length; k++) {
+    const n = list[(i + k) % list.length];
+    if (!leaveOf(c).includes(n)) return n;
+  }
+  return null;
+}
+
+// Última organista que ficou de fora, olhando até 12 meses para trás.
+function lastFora(c) {
+  let m = state.month, y = state.year;
+  for (let k = 0; k < 12; k++) {
+    if (--m < 0) { m = 11; y--; }
+    const s = state.schedules[keyFor(c.id, y, m)];
+    if (s && s.fora && c.organistas.includes(s.fora)) return { name: s.fora, month: m };
+  }
+  return null;
+}
+
+function renderFora() {
+  const c = church(), s = sched();
+  $("foraRow").hidden = !c.umaFora;
+  if (!c.umaFora) return;
+  const last = s ? null : lastFora(c);
+  const fora = s ? (s.fora || "") : (last ? nextInList(c, last.name) : "");
+  const sel = $("foraSel");
+  sel.innerHTML = "";
+  sel.add(new Option("Ninguém (todas tocam)", ""));
+  c.organistas.filter(n => !leaveOf(c).includes(n)).forEach(n => sel.add(new Option(n, n)));
+  sel.value = fora || "";
+  $("foraHint").textContent = s ? ""
+    : last ? "Seguindo a ordem da lista: em " + MONTHS[last.month] + " ficou de fora a " + last.name + "."
+    : "Escolha quem fica de fora este mês. Nos próximos meses, o app segue a ordem da lista sozinho.";
+  $("foraHint").hidden = !$("foraHint").textContent;
+}
+
+// Quem fica de fora não pode começar o mês: passa para a próxima.
+let baseStart = null;
+function skipForaAtStart() {
+  const c = church(), f = $("foraSel").value;
+  if (!c.umaFora || sched() || !baseStart) return;
+  $("startCulto").value = f && baseStart === f ? nextInList(c, f) : baseStart;
+}
+
 function renderStart() {
   const c = church(), s = sched();
   let culto = null, rjm = null, fromPrev = false;
@@ -845,21 +962,28 @@ function renderStart() {
   } else {
     const p = prevSched();
     if (p) {
-      culto = nextAfter(c.organistas, p.cultoRows, "meiaHora");
+      culto = nextStart(c.organistas, p.cultoRows);
       rjm = nextAfter(c.rjmOrganistas, p.rjmRows, "organista");
       fromPrev = !!(culto || (c.rjm && rjm));
     }
   }
+  renderFora();
   fillSelect($("startCulto"), c.organistas, culto);
+  baseStart = $("startCulto").value;
+  skipForaAtStart();
   fillSelect($("startRjm"), c.rjmOrganistas, rjm);
   $("startRjmRow").hidden = !c.rjm;
   $("startHint").hidden = !fromPrev;
 
   const away = leaveOf(c).filter(n => c.organistas.includes(n) || (c.rjm && c.rjmOrganistas.includes(n)));
   $("leaveHint").hidden = !away.length;
+  const subs = subsOf(c);
+  const who = away.length === 1 && subs.length === 1 ? subLabel(subs[0], away[0])
+    : subs.length ? joinNames(subs) + ", com a letra de quem ela substitui ao lado do nome"
+    : "outra organista, com a letra de quem ela substitui ao lado do nome";
   $("leaveHint").textContent = away.length === 1
-    ? away[0] + " está de licença. Nos dias dela, entra outra organista com (" + away[0].charAt(0).toUpperCase() + ") ao lado do nome."
-    : joinNames(away) + " estão de licença. Nos dias delas, entra outra organista com a letra de quem ela substitui ao lado do nome.";
+    ? away[0] + " está de licença. Nos dias dela, entra " + who + "."
+    : joinNames(away) + " estão de licença. Nos dias delas, entra " + who + ".";
 }
 
 async function generate() {
@@ -881,12 +1005,19 @@ async function generate() {
 
   // A cada culto a lista "anda" uma posição: quem faz o culto hoje faz a
   // meia hora do próximo, e todas alternam entre os papéis com o tempo.
+  // Se uma organista fica de fora no mês, a sequência simplesmente a pula.
   const list = c.organistas;
+  const fora = c.umaFora && list.length > 1 && list.includes($("foraSel").value) ? $("foraSel").value : "";
   const start = Math.max(0, list.indexOf($("startCulto").value));
-  const at = k => list[k % list.length];
-  const cultoRows = datesInMonth(state.year, state.month, c.days).map((day, k) => {
-    const row = { day, meiaHora: at(start + k), culto: at(start + k + 1) };
-    if (c.suplente) row.suplente = at(start + k + 2);
+  const cultoDays = datesInMonth(state.year, state.month, c.days);
+  const seq = [];
+  for (let i = start; seq.length < cultoDays.length + (c.suplente ? 2 : 1); i++) {
+    const n = list[i % list.length];
+    if (n !== fora) seq.push(n);
+  }
+  const cultoRows = cultoDays.map((day, k) => {
+    const row = { day, meiaHora: seq[k], culto: seq[k + 1] };
+    if (c.suplente) row.suplente = seq[k + 2];
     return row;
   });
 
@@ -897,12 +1028,13 @@ async function generate() {
     rjmRows = datesInMonth(state.year, state.month, [0]).map((day, k) => ({ day, organista: rl[(rs + k) % rl.length] }));
   }
 
-  fillLeave(cultoRows, ["meiaHora", "culto"].concat(c.suplente ? ["suplente"] : []), list, leaveOf(c));
+  fillLeave(cultoRows, ["meiaHora", "culto"].concat(c.suplente ? ["suplente"] : []), list, leaveOf(c), subsOf(c));
   if (c.rjm) fillLeave(rjmRows, ["organista"], c.rjmOrganistas, leaveOf(c));
 
   const prev = sched();
   state.schedules[keyFor(c.id, state.year, state.month)] = {
     cultoRows, rjmRows,
+    fora: fora || undefined,
     days: c.days.slice(),
     ensaio: prev ? prev.ensaio : "",
     limpeza: prev ? prev.limpeza : ""
@@ -914,27 +1046,57 @@ async function generate() {
   scrollToEl($("step4"));
 }
 $("btnGenerate").addEventListener("click", generate);
+$("foraSel").addEventListener("change", skipForaAtStart);
 
 /* ============================================================
    Passo 4: conferir, ajustar e baixar
 ============================================================ */
-function nameSelect(list, leave, value, label, onChange) {
+// Menu de nomes de uma data. "titular" é quem ocupa esta posição no rodízio:
+// o grupo "No lugar da <titular>" traz a substituta fixa já com a letra certa
+// e, se a titular estiver de licença, também as demais organistas.
+const WRITE_OTHER = "__escrever_outro__";
+function nameSelect(list, leave, subs, titular, value, label, onChange) {
   const sel = el("select");
   sel.setAttribute("aria-label", label);
   sel.add(new Option("—", ""));
   list.forEach(n => sel.add(new Option(leave.includes(n) ? n + " (de licença)" : n, n)));
-  leave.filter(away => list.includes(away)).forEach(away => {
-    const group = el("optgroup", { label: "No lugar da " + away });
-    list.filter(n => !leave.includes(n)).forEach(n => group.append(new Option(subLabel(n, away), subLabel(n, away))));
+  if (list.includes(titular)) {
+    const others = leave.includes(titular) ? list.filter(n => n !== titular && !leave.includes(n)) : [];
+    const names = subs.concat(others);
+    if (names.length) {
+      const group = el("optgroup", { label: "No lugar da " + titular });
+      names.forEach(n => group.append(new Option(subLabel(n, titular), subLabel(n, titular))));
+      sel.append(group);
+    }
+  } else if (subs.length) {
+    const group = el("optgroup", { label: "Substituta" });
+    subs.forEach(n => group.append(new Option(n, n)));
     sel.append(group);
-  });
+  }
   if (value && ![...sel.options].some(o => o.value === value)) sel.add(new Option(value, value));
+  const other = new Option("✎ Escrever outro nome…", WRITE_OTHER);
+  sel.add(other);
   sel.value = value || "";
-  sel.addEventListener("change", () => { onChange(sel.value); save(); });
+  let prev = sel.value;
+  sel.addEventListener("change", async () => {
+    if (sel.value === WRITE_OTHER) {
+      const typed = await ask({
+        title: "Escrever outro nome",
+        text: "Escreva o nome como ele deve aparecer no rodízio. Por exemplo: Elaine (RU).",
+        ok: "Usar este nome", cancel: "Cancelar", input: prev
+      });
+      if (!typed) { sel.value = prev; return; }
+      if (![...sel.options].some(o => o.value === typed)) sel.insertBefore(new Option(typed, typed), other);
+      sel.value = typed;
+    }
+    prev = sel.value;
+    onChange(sel.value);
+    save();
+  });
   return sel;
 }
 
-function buildTable(cols, rows, list, leave, onRemove) {
+function buildTable(cols, rows, list, leave, subs, onRemove) {
   const head = el("tr");
   ["Data"].concat(cols.map(c => c[1])).concat([""]).forEach(h => head.append(el("th", { textContent: h })));
   const body = el("tbody");
@@ -945,7 +1107,14 @@ function buildTable(cols, rows, list, leave, onRemove) {
     cols.forEach(([key, label]) => {
       const td = el("td", { className: "name" });
       td.dataset.label = label;
-      td.append(nameSelect(list, leave, row[key], label + " em " + fmtDay(row.day), v => { row[key] = v; }));
+      const titular = slotName(row, key, list);
+      td.append(nameSelect(list, leave, subs, titular, row[key], label + " em " + fmtDay(row.day), v => {
+        if (list.includes(titular) && !(row.orig && row.orig[key])) {
+          row.orig = row.orig || {};
+          row.orig[key] = titular;
+        }
+        row[key] = v;
+      }));
       tr.append(td);
     });
     const rm = el("button", { type: "button", textContent: "Remover" });
@@ -985,11 +1154,12 @@ function renderSheet() {
   ]));
 
   const cols = [["meiaHora", "Meia hora"], ["culto", "Culto"]].concat(c.suplente ? [["suplente", "Suplente"]] : []);
-  sheet.append(buildTable(cols, s.cultoRows, c.organistas, leaveOf(c), idx => removeRow(s.cultoRows, idx, true)));
+  sheet.append(buildTable(cols, s.cultoRows, c.organistas, leaveOf(c), subsOf(c),
+    idx => removeRow(s.cultoRows, idx, true)));
 
   if (c.rjm && s.rjmRows && s.rjmRows.length) {
     sheet.append(el("div", { className: "section", textContent: "Reunião de Jovens e Menores — domingos" }));
-    sheet.append(buildTable([["organista", "Organista"]], s.rjmRows, c.rjmOrganistas, leaveOf(c),
+    sheet.append(buildTable([["organista", "Organista"]], s.rjmRows, c.rjmOrganistas, leaveOf(c), [],
       idx => removeRow(s.rjmRows, idx, false)));
   }
 
