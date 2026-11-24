@@ -445,6 +445,7 @@
   <div class="box" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
     <h3 id="dlgTitle"></h3>
     <p id="dlgText"></p>
+    <input type="text" id="dlgInput" autocomplete="off" hidden>
     <div class="actions">
       <button type="button" id="dlgCancel"></button>
       <button type="button" class="primary" id="dlgOk"></button>
@@ -642,21 +643,30 @@ function el(tag, props, children) {
   return e;
 }
 
+// Janela de confirmação. Com "input", mostra uma caixa de texto e devolve o
+// texto digitado (ou null se cancelar ou deixar em branco).
 function ask(o) {
   return new Promise(resolve => {
+    const withInput = o.input !== undefined;
+    const input = $("dlgInput");
     $("dlgTitle").textContent = o.title;
     $("dlgText").textContent = o.text;
     $("dlgOk").textContent = o.ok;
     $("dlgCancel").textContent = o.cancel || "Cancelar";
     $("dlgOk").className = o.danger ? "danger-fill" : "primary";
+    input.hidden = !withInput;
+    input.value = withInput ? (o.input || "") : "";
     $("dlg").hidden = false;
-    $("dlgCancel").focus();
-    const onKey = e => { if (e.key === "Escape") done(false); };
-    function done(v) {
+    if (withInput) { input.focus(); input.select(); } else $("dlgCancel").focus();
+    const onKey = e => {
+      if (e.key === "Escape") done(false);
+      else if (e.key === "Enter" && withInput && document.activeElement === input) done(true);
+    };
+    function done(ok) {
       $("dlg").hidden = true;
       $("dlgOk").onclick = $("dlgCancel").onclick = $("dlgBack").onclick = null;
       document.removeEventListener("keydown", onKey);
-      resolve(v);
+      resolve(withInput ? (ok && input.value.trim() ? input.value.trim() : null) : ok);
     }
     $("dlgOk").onclick = () => done(true);
     $("dlgCancel").onclick = $("dlgBack").onclick = () => done(false);
@@ -1044,6 +1054,7 @@ $("foraSel").addEventListener("change", skipForaAtStart);
 // Menu de nomes de uma data. "titular" é quem ocupa esta posição no rodízio:
 // o grupo "No lugar da <titular>" traz a substituta fixa já com a letra certa
 // e, se a titular estiver de licença, também as demais organistas.
+const WRITE_OTHER = "__escrever_outro__";
 function nameSelect(list, leave, subs, titular, value, label, onChange) {
   const sel = el("select");
   sel.setAttribute("aria-label", label);
@@ -1063,8 +1074,25 @@ function nameSelect(list, leave, subs, titular, value, label, onChange) {
     sel.append(group);
   }
   if (value && ![...sel.options].some(o => o.value === value)) sel.add(new Option(value, value));
+  const other = new Option("✎ Escrever outro nome…", WRITE_OTHER);
+  sel.add(other);
   sel.value = value || "";
-  sel.addEventListener("change", () => { onChange(sel.value); save(); });
+  let prev = sel.value;
+  sel.addEventListener("change", async () => {
+    if (sel.value === WRITE_OTHER) {
+      const typed = await ask({
+        title: "Escrever outro nome",
+        text: "Escreva o nome como ele deve aparecer no rodízio. Por exemplo: Elaine (RU).",
+        ok: "Usar este nome", cancel: "Cancelar", input: prev
+      });
+      if (!typed) { sel.value = prev; return; }
+      if (![...sel.options].some(o => o.value === typed)) sel.insertBefore(new Option(typed, typed), other);
+      sel.value = typed;
+    }
+    prev = sel.value;
+    onChange(sel.value);
+    save();
+  });
   return sel;
 }
 
