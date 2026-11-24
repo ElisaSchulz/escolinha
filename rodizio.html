@@ -180,6 +180,7 @@
 
   /* ---------- passo 3 ---------- */
   .start-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .start-field .hint { font-weight: 400; }
   .leave-note {
     border-radius: 10px;
     padding: 12px 14px;
@@ -355,6 +356,12 @@
           <textarea id="substitutas" class="short"></textarea>
         </label>
 
+        <div class="field">
+          <label class="check"><input type="checkbox" id="umaFora"> Uma organista fica de fora a cada mês</label>
+          <span class="hint">Segue a ordem da lista, uma por mês. Assim as organistas não ficam sempre
+          tocando no mesmo dia da semana.</span>
+        </div>
+
         <label class="check"><input type="checkbox" id="hasSuplente"> Tem organista suplente</label>
         <label class="check"><input type="checkbox" id="hasRjm"> Tem Reunião de Jovens e Menores aos domingos</label>
 
@@ -388,6 +395,11 @@
 
   <section class="step">
     <h2><span class="num">3</span> Monte o rodízio</h2>
+    <div class="start-field" id="foraRow">
+      <label for="foraSel">Quem fica de fora este mês</label>
+      <select id="foraSel"></select>
+      <span class="hint" id="foraHint"></span>
+    </div>
     <label class="start-field">
       Quem faz a meia hora do primeiro culto do mês
       <select id="startCulto"></select>
@@ -472,7 +484,7 @@ const PALETTE = [
 
 function defaultChurches() {
   return [
-    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4,6],
+    { id: "boa-vista", name: "Boa Vista", color: "#1d5fa6", days: [0,4,6], umaFora: true,
       organistas: ["Elaine","Helena","Elcivani","Luciana","Rita","Rute","Juciele","Andreza","Maria","Gislaine"],
       suplente: false, rjm: true,
       rjmOrganistas: ["Elaine","Helena","Luciana","Rita","Rute","Juciele","Gislaine"] },
@@ -532,6 +544,7 @@ function load() {
     if (!c.color) c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
     // Só preenche se o campo nunca existiu: não desfaz o que a usuária escreveu ou apagou.
     if (c.substitutas === undefined && d && d.substitutas) c.substitutas = d.substitutas.slice();
+    if (c.umaFora === undefined && d && d.umaFora) c.umaFora = true;
   });
   return st;
 }
@@ -701,6 +714,7 @@ function renderSettings() {
   $("substitutas").value = (c.substitutas || []).join("\n");
   renderLeave();
   $("hasSuplente").checked = c.suplente;
+  $("umaFora").checked = !!c.umaFora;
   $("hasRjm").checked = c.rjm;
   $("rjmField").hidden = !c.rjm;
 
@@ -785,6 +799,11 @@ $("substitutas").addEventListener("input", () => {
   renderStart();
   renderSheet();
 });
+$("umaFora").addEventListener("change", () => {
+  church().umaFora = $("umaFora").checked;
+  save();
+  renderStart();
+});
 $("hasSuplente").addEventListener("change", () => {
   church().suplente = $("hasSuplente").checked;
   save();
@@ -858,6 +877,63 @@ function nextAfter(list, rows, field) {
   return i >= 0 ? list[(i + 1) % list.length] : null;
 }
 
+// Quem faz a primeira meia hora do mês: quem tocou no último culto do mês
+// anterior (no rodízio, quem toca no culto faz a meia hora do culto seguinte).
+function nextStart(list, rows) {
+  if (!rows || !rows.length) return null;
+  const last = rows[rows.length - 1];
+  const culto = slotName(last, "culto", list);
+  if (list.includes(culto)) return culto;
+  const i = list.indexOf(slotName(last, "meiaHora", list));
+  return i >= 0 ? list[(i + 1) % list.length] : null;
+}
+
+// A próxima da lista depois de "name", sem contar quem está de licença.
+function nextInList(c, name) {
+  const list = c.organistas, i = list.indexOf(name);
+  for (let k = 1; k <= list.length; k++) {
+    const n = list[(i + k) % list.length];
+    if (!leaveOf(c).includes(n)) return n;
+  }
+  return null;
+}
+
+// Última organista que ficou de fora, olhando até 12 meses para trás.
+function lastFora(c) {
+  let m = state.month, y = state.year;
+  for (let k = 0; k < 12; k++) {
+    if (--m < 0) { m = 11; y--; }
+    const s = state.schedules[keyFor(c.id, y, m)];
+    if (s && s.fora && c.organistas.includes(s.fora)) return { name: s.fora, month: m };
+  }
+  return null;
+}
+
+function renderFora() {
+  const c = church(), s = sched();
+  $("foraRow").hidden = !c.umaFora;
+  if (!c.umaFora) return;
+  const last = s ? null : lastFora(c);
+  const fora = s ? (s.fora || "") : (last ? nextInList(c, last.name) : "");
+  const sel = $("foraSel");
+  sel.innerHTML = "";
+  sel.add(new Option("Ninguém (todas tocam)", ""));
+  c.organistas.filter(n => !leaveOf(c).includes(n)).forEach(n => sel.add(new Option(n, n)));
+  sel.value = fora || "";
+  $("foraHint").textContent = s ? ""
+    : last ? "Seguindo a ordem da lista: em " + MONTHS[last.month] + " ficou de fora a " + last.name + "."
+    : "Escolha quem fica de fora este mês. Nos próximos meses, o app segue a ordem da lista sozinho.";
+  $("foraHint").hidden = !$("foraHint").textContent;
+}
+
+// Quem fica de fora não pode começar o mês: passa para a próxima.
+let baseStart = null;
+function skipForaAtStart() {
+  const c = church(), f = $("foraSel").value;
+  if (!c.umaFora || sched() || !baseStart) return;
+  $("startCulto").value = f && baseStart === f ? nextInList(c, f) : baseStart;
+}
+
 function renderStart() {
   const c = church(), s = sched();
   let culto = null, rjm = null, fromPrev = false;
@@ -867,12 +943,15 @@ function renderStart() {
   } else {
     const p = prevSched();
     if (p) {
-      culto = nextAfter(c.organistas, p.cultoRows, "meiaHora");
+      culto = nextStart(c.organistas, p.cultoRows);
       rjm = nextAfter(c.rjmOrganistas, p.rjmRows, "organista");
       fromPrev = !!(culto || (c.rjm && rjm));
     }
   }
+  renderFora();
   fillSelect($("startCulto"), c.organistas, culto);
+  baseStart = $("startCulto").value;
+  skipForaAtStart();
   fillSelect($("startRjm"), c.rjmOrganistas, rjm);
   $("startRjmRow").hidden = !c.rjm;
   $("startHint").hidden = !fromPrev;
@@ -907,12 +986,19 @@ async function generate() {
 
   // A cada culto a lista "anda" uma posição: quem faz o culto hoje faz a
   // meia hora do próximo, e todas alternam entre os papéis com o tempo.
+  // Se uma organista fica de fora no mês, a sequência simplesmente a pula.
   const list = c.organistas;
+  const fora = c.umaFora && list.length > 1 && list.includes($("foraSel").value) ? $("foraSel").value : "";
   const start = Math.max(0, list.indexOf($("startCulto").value));
-  const at = k => list[k % list.length];
-  const cultoRows = datesInMonth(state.year, state.month, c.days).map((day, k) => {
-    const row = { day, meiaHora: at(start + k), culto: at(start + k + 1) };
-    if (c.suplente) row.suplente = at(start + k + 2);
+  const cultoDays = datesInMonth(state.year, state.month, c.days);
+  const seq = [];
+  for (let i = start; seq.length < cultoDays.length + (c.suplente ? 2 : 1); i++) {
+    const n = list[i % list.length];
+    if (n !== fora) seq.push(n);
+  }
+  const cultoRows = cultoDays.map((day, k) => {
+    const row = { day, meiaHora: seq[k], culto: seq[k + 1] };
+    if (c.suplente) row.suplente = seq[k + 2];
     return row;
   });
 
@@ -929,6 +1015,7 @@ async function generate() {
   const prev = sched();
   state.schedules[keyFor(c.id, state.year, state.month)] = {
     cultoRows, rjmRows,
+    fora: fora || undefined,
     days: c.days.slice(),
     ensaio: prev ? prev.ensaio : "",
     limpeza: prev ? prev.limpeza : ""
@@ -940,6 +1027,7 @@ async function generate() {
   scrollToEl($("step4"));
 }
 $("btnGenerate").addEventListener("click", generate);
+$("foraSel").addEventListener("change", skipForaAtStart);
 
 /* ============================================================
    Passo 4: conferir, ajustar e baixar
