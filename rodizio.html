@@ -487,6 +487,7 @@ function defaultChurches() {
       suplente: false, rjm: true, rjmOrganistas: ["Thais","Carine"] },
     { id: "lagoa-nova", name: "Lagoa Nova", color: "#0b6e78", days: [0,2,5],
       organistas: ["Albeli","Luciene","Suely","Ana Claudia","Alda","Estefani","Heliara","Delma","Danielle","Emilly","Bruna","Fernanda","Elizete"],
+      substitutas: ["Andreia"],
       suplente: false, rjm: true, rjmOrganistas: ["Karen","Mirielly"] },
     { id: "graminha", name: "Graminha", color: "#2b7a46", days: [0,2,4],
       organistas: ["Lilian","Anita","Edna","Jéssica","Patrícia","Francislene","Beatriz","Meirielly","Viviane","Elaine"],
@@ -527,10 +528,10 @@ function load() {
     if (!st.churches.some(c => c.id === d.id) && !st.deletedIds.includes(d.id)) st.churches.push(d);
   });
   st.churches.forEach((c, i) => {
-    if (!c.color) {
-      const d = defs.find(x => x.id === c.id);
-      c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
-    }
+    const d = defs.find(x => x.id === c.id);
+    if (!c.color) c.color = d ? d.color : PALETTE[i % PALETTE.length][0];
+    // Só preenche se o campo nunca existiu: não desfaz o que a usuária escreveu ou apagou.
+    if (c.substitutas === undefined && d && d.substitutas) c.substitutas = d.substitutas.slice();
   });
   return st;
 }
