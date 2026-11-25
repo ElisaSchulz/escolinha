@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Como usar o Rodízio de Organistas</title>
+<style>
+  :root {
+    --ink: #22202a;
+    --paper: #f4f3f0;
+    --card: #ffffff;
+    --muted: #5f5b69;
+    --line: #dcd8e1;
+    --soft: #f0eef3;
+    --brand: #2b2150;
+    --mark: #c2410c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #eeecf3; --paper: #16151b; --card: #221f2a; --muted: #aaa5b6;
+      --line: #3a3644; --soft: #2a2733; --brand: #b9a9f0; --mark: #fb923c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #eeecf3; --paper: #16151b; --card: #221f2a; --muted: #aaa5b6;
+    --line: #3a3644; --soft: #2a2733; --brand: #b9a9f0; --mark: #fb923c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 19px; scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Ubuntu, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--mark); outline-offset: 2px; }
+
+  header.top { background: #2b2150; color: #fff7ee; padding: 26px 16px 24px; }
+  header.top .in { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  header.top h1 { font: 700 1.75rem/1.2 Georgia, "Times New Roman", serif; text-wrap: balance; }
+  header.top p { opacity: .88; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 52px; padding: 10px 22px;
+    border-radius: 12px;
+    font-weight: 700; text-decoration: none;
+  }
+  .header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  header .btn { background: #fff7ee; color: #2b2150; }
+  header .pdf { color: #fff7ee; font-weight: 600; min-height: 48px; display: inline-flex; align-items: center; }
+  .print-only { display: none; }
+
+  main { max-width: 700px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 22px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 20px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .card > h2 { font: 700 1.4rem/1.25 Georgia, "Times New Roman", serif; color: var(--brand); text-wrap: balance; }
+  .card > .lead { color: var(--muted); margin-top: -6px; }
+  h3 { font-size: 1.1rem; line-height: 1.3; }
+
+  .toc { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .toc a {
+    display: flex; align-items: center; min-height: 52px;
+    padding: 10px 16px;
+    border: 2px solid var(--line); border-radius: 12px;
+    font-weight: 600; text-decoration: none;
+  }
+  .toc a:hover { border-color: var(--brand); }
+
+  .steps { list-style: none; display: flex; flex-direction: column; gap: 26px; counter-reset: step; }
+  .steps > li { display: grid; grid-template-columns: 44px 1fr; gap: 6px 14px; counter-increment: step; }
+  .steps > li::before {
+    content: counter(step);
+    grid-row: span 2;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #2b2150; color: #fff;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 1.1rem;
+  }
+  .steps > li > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+  figure { display: flex; flex-direction: column; gap: 6px; }
+  figure img {
+    display: block;
+    width: 100%; max-width: 380px; height: auto;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: #fff;
+  }
+  figcaption { color: var(--muted); font-size: .85rem; }
+
+  b.ui { font-weight: 700; color: var(--brand); }
+  .tip { background: var(--soft); border-radius: 12px; padding: 14px 16px; }
+  .tip strong { display: block; margin-bottom: 2px; }
+  ul.plain { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+
+  /* desenho do menu de nomes (o menu de verdade é do próprio celular) */
+  .menu-mock {
+    max-width: 330px;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: #ffffff; color: #22202a;
+    overflow: hidden; font-size: .95rem;
+  }
+  .menu-mock div { padding: 9px 16px; border-bottom: 1px solid #ece9f0; }
+  .menu-mock .group { font-size: .78rem; font-weight: 700; color: #5f5b69; text-transform: uppercase; letter-spacing: .05em; background: #f4f3f0; }
+  .menu-mock .pick { font-weight: 700; box-shadow: inset 4px 0 0 #c2410c; }
+  .menu-mock .more { color: #5f5b69; font-style: italic; }
+
+  .qa { display: flex; flex-direction: column; gap: 18px; }
+  .qa h3 { color: var(--brand); }
+  footer { text-align: center; padding: 0 16px 40px; display: flex; flex-direction: column; gap: 12px; align-items: center; color: var(--muted); }
+  footer .btn { background: #2b2150; color: #fff; }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  @media print {
+    html { font-size: 15px; }
+    body { background: #fff; }
+    header.top { padding: 18px 16px; }
+    .header-actions, footer .btn, .toc, .no-print { display: none; }
+    .print-only { display: block; }
+    .card { border: 0; padding: 8px 0; break-inside: auto; }
+    .tip, .qa > div, figure, h3 { break-inside: avoid; }
+    .card > h2, h3 { break-after: avoid; }
+    figure img { max-width: 230px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <h1>Como usar o Rodízio de Organistas</h1>
+    <p>Um guia com o passo a passo, para consultar sempre que precisar.</p>
+    <div class="header-actions">
+      <a class="btn" href="rodizio.html">Abrir o app</a>
+      <a class="pdf" href="tutorial/como-usar-rodizio.pdf">Baixar este guia em PDF</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Antes de começar</h2>
+    <div class="tip">
+      <strong>Deixe o app na tela do celular</strong>
+      Assim ele abre com um toque, como um aplicativo.
+      <ul class="plain" style="margin-top:8px">
+        <li><b>Android (Chrome):</b> abra o app, toque nos três pontinhos <b>⋮</b> no canto de cima e escolha <b class="ui">Adicionar à tela inicial</b>.</li>
+        <li><b>iPhone (Safari):</b> abra o app, toque no botão de compartilhar (o quadrado com uma seta para cima) e escolha <b class="ui">Adicionar à Tela de Início</b>.</li>
+      </ul>
+    </div>
+    <p>Tudo o que você faz no app fica <b>salvo sozinho neste celular</b>. Não precisa apertar em "salvar".</p>
+    <p class="print-only">Endereço do app: <b>elisaschulz.github.io/escolinha/rodizio.html</b></p>
+    <h3 class="no-print">O que tem neste guia</h3>
+    <ul class="toc">
+      <li><a href="#mes">Montar o rodízio do mês</a></li>
+      <li><a href="#falta">Quando uma organista falta num dia</a></li>
+      <li><a href="#licenca">Organista de licença</a></li>
+      <li><a href="#boavista">Boa Vista: quem fica de fora no mês</a></li>
+      <li><a href="#lista">Mudar a lista de organistas ou os dias de culto</a></li>
+      <li><a href="#duvidas">Dúvidas comuns</a></li>
+    </ul>
+  </section>
+
+  <section class="card" id="mes">
+    <h2>Montar o rodízio do mês</h2>
+    <p class="lead">É isto que você faz todo mês, para cada igreja.</p>
+    <ol class="steps">
+      <li><div>
+        <h3>Escolha a igreja</h3>
+        <p>Toque no nome da igreja. Ela fica pintada com a cor dela, e o resto do app passa a usar essa cor.</p>
+        <figure><img src="tutorial/01-igreja.jpg" width="390" alt="Botões coloridos com os nomes das igrejas; Graminha está selecionada, em verde."></figure>
+      </div></li>
+      <li><div>
+        <h3>Escolha o mês</h3>
+        <p>Use as setas <b>◀</b> e <b>▶</b> até aparecer o mês que você quer.</p>
+        <figure><img src="tutorial/02-mes.jpg" width="390" alt="Setas para voltar e avançar o mês, com Dezembro de 2026 no meio."></figure>
+      </div></li>
+      <li><div>
+        <h3>Monte o rodízio</h3>
+        <p>O app já escolhe quem começa, continuando de onde o mês anterior parou. É só conferir e tocar no botão grande <b class="ui">Montar rodízio</b>.</p>
+        <figure><img src="tutorial/03-montar.jpg" width="390" alt="Passo 3 do app: quem faz a meia hora do primeiro culto, quem toca na primeira Reunião de Jovens e o botão Montar rodízio de Dezembro."></figure>
+      </div></li>
+      <li><div>
+        <h3>Confira e troque o que precisar</h3>
+        <p>O rodízio aparece logo abaixo. Para trocar uma organista, <b>toque no nome dela</b> e escolha outra. No desenho, o quadrado em laranja mostra onde tocar.</p>
+        <p>Se um culto não vai acontecer, toque em <b class="ui">Remover</b> ao lado da data.</p>
+        <figure><img src="tutorial/04-conferir.jpg" width="390" alt="Rodízio de Graminha em dezembro, com o nome Edna destacado em laranja para mostrar onde tocar."></figure>
+        <p>Mais embaixo você pode <b>incluir um culto extra</b> e escrever o <b>Ensaio</b> e a <b>Limpeza/Escala</b>. Eles aparecem na imagem.</p>
+        <figure><img src="tutorial/05-extras.jpg" width="390" alt="Campos Incluir outra data de culto, Ensaio e Limpeza/Escala, e o botão Baixar imagem do rodízio."></figure>
+      </div></li>
+      <li><div>
+        <h3>Baixe a imagem</h3>
+        <p>Toque em <b class="ui">Baixar imagem do rodízio</b>. Abre uma janela com a imagem pronta. Aí você pode:</p>
+        <ul class="plain">
+          <li>tocar em <b class="ui">Salvar imagem</b>;</li>
+          <li>tocar em <b class="ui">Compartilhar</b> e escolher o WhatsApp (o botão aparece só nos celulares que permitem);</li>
+          <li>ou <b>tocar e segurar</b> a imagem e escolher salvar.</li>
+        </ul>
+        <figure><img src="tutorial/06-imagem.jpg" width="358" alt="Janela Sua imagem está pronta, com a imagem do rodízio e os botões Salvar imagem e Fechar."></figure>
+      </div></li>
+    </ol>
+    <div class="tip">
+      <strong>Cuidado com "Montar de novo"</strong>
+      Se o mês já está montado, o botão vira <b class="ui">Montar de novo</b>. Ele refaz o mês inteiro e apaga as trocas que você fez à mão. Para mudar só um nome, toque no nome.
+    </div>
+  </section>
+
+  <section class="card" id="falta">
+    <h2>Quando uma organista falta num dia</h2>
+    <ol class="steps">
+      <li><div>
+        <h3>Toque no nome de quem vai faltar</h3>
+        <p>Abre a lista de nomes. Além das organistas da igreja, aparece:</p>
+        <ul class="plain">
+          <li>o grupo <b class="ui">No lugar da …</b>, com a substituta já com a letra certa, por exemplo <b>Andreia (A)</b> no lugar da Alda;</li>
+          <li>no fim, <b class="ui">✎ Escrever outro nome…</b></li>
+        </ul>
+        <figure>
+          <div class="menu-mock" role="img" aria-label="Exemplo da lista de nomes num dia da Alda, em Lagoa Nova">
+            <div>Albeli</div>
+            <div>Luciene</div>
+            <div class="more">… as outras organistas …</div>
+            <div class="group">No lugar da Alda</div>
+            <div class="pick">Andreia (A)</div>
+            <div>✎ Escrever outro nome…</div>
+          </div>
+          <figcaption>Exemplo da lista num dia da Alda, em Lagoa Nova.</figcaption>
+        </figure>
+      </div></li>
+      <li><div>
+        <h3>Precisa escrever do seu jeito?</h3>
+        <p>Escolha <b class="ui">✎ Escrever outro nome…</b>, escreva, por exemplo, <b>Elaine (RU)</b>, e toque em <b class="ui">Usar este nome</b>. O nome aparece assim na imagem.</p>
+        <figure><img src="tutorial/07-outro-nome.jpg" width="390" alt="Janela Escrever outro nome, com Elaine (RU) escrito e os botões Cancelar e Usar este nome."></figure>
+      </div></li>
+    </ol>
+  </section>
+
+  <section class="card" id="licenca">
+    <h2>Organista de licença</h2>
+    <p class="lead">Para quando alguém fica afastada por um tempo, como a Delma em Lagoa Nova.</p>
+    <ol class="steps">
+      <li><div>
+        <h3>Abra as configurações da igreja</h3>
+        <p>No passo 1, toque em <b class="ui">Mudar organistas, dias de culto ou cor</b>.</p>
+      </div></li>
+      <li><div>
+        <h3>Marque quem está de licença</h3>
+        <p>Em <b>Organistas de licença</b>, toque no nome dela para marcar.</p>
+        <figure><img src="tutorial/09-licenca.jpg" width="390" alt="Lista de organistas de Lagoa Nova com a Delma marcada como de licença."></figure>
+      </div></li>
+      <li><div>
+        <h3>A substituta entra sozinha</h3>
+        <p>Nos dias da Delma, o app coloca a substituta fixa com a letra dela, por exemplo <b>Andreia (D)</b>. A substituta fixa fica escrita logo abaixo, no campo <b>Substituta fixa</b>.</p>
+        <figure><img src="tutorial/09b-substituta.jpg" width="390" alt="Campo Substituta fixa com o nome Andreia."></figure>
+        <p>Enquanto houver alguém de licença, o passo 3 mostra um aviso:</p>
+        <figure><img src="tutorial/10-aviso-licenca.jpg" width="358" alt="Passo 3 com o aviso: Delma está de licença. Nos dias dela, entra Andreia (D)."></figure>
+      </div></li>
+    </ol>
+    <div class="tip">
+      <strong>Meses que já estavam montados</strong>
+      Marcar a licença não muda sozinho um mês já pronto. Nele, toque em <b class="ui">Montar de novo</b>, ou troque o nome da Delma à mão.
+    </div>
+    <div class="tip">
+      <strong>Quando ela voltar</strong>
+      Desmarque o nome dela em Organistas de licença e toque em <b class="ui">Montar de novo</b> nos meses que já estavam prontos.
+    </div>
+  </section>
+
+  <section class="card" id="boavista">
+    <h2>Boa Vista: quem fica de fora no mês</h2>
+    <p>Na Boa Vista, uma organista fica de fora a cada mês, seguindo a ordem da lista. Assim ninguém fica sempre tocando no mesmo dia da semana.</p>
+    <p>O app já escolhe quem é a vez e mostra quem ficou de fora no mês anterior. Confira e monte normalmente. Para escolher outra pessoa, toque no nome. Se num mês ninguém deve ficar de fora, escolha <b class="ui">Ninguém (todas tocam)</b>.</p>
+    <figure><img src="tutorial/11-fora.jpg" width="390" alt="Campo Quem fica de fora este mês com Elcivani, e o aviso: em Dezembro ficou de fora a Helena."></figure>
+    <div class="tip">
+      <strong>Se aparecer "Ninguém"</strong>
+      Na primeira vez, o app ainda não sabe quem ficou de fora no mês anterior. Escolha quem é a vez. Depois disso, ele segue a ordem sozinho.
+    </div>
+  </section>
+
+  <section class="card" id="lista">
+    <h2>Mudar a lista de organistas ou os dias de culto</h2>
+    <ol class="steps">
+      <li><div>
+        <h3>Abra as configurações</h3>
+        <p>Escolha a igreja e toque em <b class="ui">Mudar organistas, dias de culto ou cor</b>.</p>
+        <figure><img src="tutorial/08-config.jpg" width="390" alt="Configurações de Graminha: nome da igreja, dias de culto marcados e a lista de organistas, um nome por linha."></figure>
+      </div></li>
+      <li><div>
+        <h3>Faça a mudança</h3>
+        <ul class="plain">
+          <li><b>Dias de culto:</b> toque no dia para marcar ou desmarcar.</li>
+          <li><b>Organistas:</b> um nome por linha, na ordem do rodízio. Para tirar alguém, apague a linha dela. Para incluir, escreva o nome numa linha nova.</li>
+          <li><b>Cor:</b> toque na bolinha da cor que quiser.</li>
+        </ul>
+      </div></li>
+      <li><div>
+        <h3>Toque em Pronto</h3>
+        <p>Pronto. Tudo já ficou salvo. A mudança vale para os próximos meses que você montar.</p>
+      </div></li>
+    </ol>
+    <div class="tip">
+      <strong>Igreja nova</strong>
+      No passo 1, toque em <b class="ui">+ Nova igreja</b>, escreva o nome, marque os dias e escreva as organistas.
+    </div>
+  </section>
+
+  <section class="card" id="duvidas">
+    <h2>Dúvidas comuns</h2>
+    <div class="qa">
+      <div>
+        <h3>Abri o app e sumiu tudo o que eu tinha feito.</h3>
+        <p>O app guarda tudo <b>só no celular e no navegador onde você usou</b>. Em outro celular, em outro navegador ou numa aba anônima, ele começa do zero. Use sempre o mesmo celular, numa aba normal, e não apague os dados do navegador.</p>
+      </div>
+      <div>
+        <h3>O app está diferente do que aparece aqui.</h3>
+        <p>Pode ser uma versão antiga guardada no celular. Feche a aba e abra o app de novo.</p>
+      </div>
+      <div>
+        <h3>Salvei a imagem e não acho.</h3>
+        <p>Procure na <b>Galeria</b> (ou em <b>Fotos</b>, no iPhone) ou na pasta <b>Downloads</b> do celular. Outra opção é usar o botão <b class="ui">Compartilhar</b> e mandar direto no WhatsApp.</p>
+      </div>
+      <div>
+        <h3>Errei um nome no rodízio.</h3>
+        <p>Toque no nome errado e escolha o certo. Não precisa montar de novo.</p>
+      </div>
+      <div>
+        <h3>Uma data saiu errada ou falta um culto.</h3>
+        <p>Use <b class="ui">Remover</b> ao lado da data para tirar, ou <b class="ui">Incluir outra data de culto</b>, embaixo do rodízio, para pôr. Se os dias de culto da igreja mudaram, mude nas configurações e toque em <b class="ui">Montar de novo</b>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <a class="btn" href="rodizio.html">Abrir o app</a>
+</footer>
+</body>
+</html>

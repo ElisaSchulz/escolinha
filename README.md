@@ -14,3 +14,5 @@ Ferramenta para montar o rodízio mensal de organistas das igrejas (culto + Reun
 4. **Confira e baixe a imagem** — toque em qualquer nome para trocar a organista, remova ou inclua datas, preencha Ensaio e Limpeza e toque em "Baixar imagem do rodízio".
 
 Tudo fica salvo automaticamente no próprio aparelho.
+
+**Tutorial:** https://elisaschulz.github.io/escolinha/tutorial.html (também pelo botão "Como usar", no topo do app). Há uma versão em PDF em `tutorial/como-usar-rodizio.pdf` para imprimir ou mandar no WhatsApp.
